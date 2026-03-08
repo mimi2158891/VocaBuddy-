@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { MdHome, MdAddCircle, MdUploadFile, MdList, MdStyle, MdHeadphones, MdSettings } from 'react-icons/md';
+import logoImg from '../../public/logo.png';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -20,7 +21,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="VocaBuddy Logo" className="logo-icon" />
+          <img src={logoImg} alt="VocaBuddy Logo" className="logo-icon" />
           <h2>VocaBuddy</h2>
         </div>
         
