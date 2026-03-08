@@ -22,16 +22,11 @@
 }
 
 .logo-icon {
-  width: 36px;
-  height: 36px;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* Make it circular to match the badge-like logo */
+  object-fit: contain;
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-header h2 {

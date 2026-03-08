@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <div className="logo-icon">V</div>
+          <img src="/logo.png" alt="VocaBuddy Logo" className="logo-icon" />
           <h2>VocaBuddy</h2>
         </div>
         
