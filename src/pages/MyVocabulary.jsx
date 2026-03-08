@@ -352,7 +352,7 @@ const MyVocabulary = () => {
             />
           </div>
 
-          <div className="folder-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'nowrap', flex: 1, minWidth: 0 }}>
+          <div className="folder-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
             <select 
               value={selectedFolder} 
               onChange={(e) => setSelectedFolder(e.target.value)}

@@ -250,7 +250,7 @@ const CardStudy = () => {
   function renderHeader() {
     return (
       <>
-        <header className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+        <header className="page-header" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', justifyContent: 'space-between' }}>
           <div>
             <h2>卡片學習模式</h2>
             <p>點擊卡片翻面，挑戰你的記憶力。</p>
@@ -272,7 +272,7 @@ const CardStudy = () => {
           </div>
         </header>
 
-        <div className="vocab-controls-panel" style={{ backgroundColor: 'var(--surface-color)', padding: '12px 16px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', width: '100%', margin: '0 auto 24px auto', justifyContent: 'center', gap: '18px' }}>
+        <div className="vocab-controls-panel" style={{ backgroundColor: 'var(--surface-color)', padding: '12px 16px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', width: '100%', margin: '0 auto 24px auto', justifyContent: 'center', gap: '12px' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div style={{ display: 'flex', padding: '4px', gap: '4px', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
@@ -324,7 +324,7 @@ const CardStudy = () => {
                 value={selectedFolder} 
                 onChange={(e) => setSelectedFolder(e.target.value)}
                 className="inline-select"
-                style={{ width: '180px' }}
+                style={{ maxWidth: '160px', flex: '1 1 auto', textOverflow: 'ellipsis' }}
               >
                 <option value="All Folders">📁 All Folders</option>
                 {folders.map(f => (
