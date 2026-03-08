@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vocab-cache-v1';
+const CACHE_NAME = 'vocab-cache-v2';
 const API_CACHE_NAME = 'vocab-api-cache-v1';
 
 const urlsToCache = [
