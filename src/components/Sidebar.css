@@ -22,8 +22,8 @@
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%; /* Make it circular to match the badge-like logo */
   object-fit: contain;
   box-shadow: var(--shadow-sm);
