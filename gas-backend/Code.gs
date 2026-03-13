@@ -53,6 +53,18 @@ function doPost(e) {
       return ResponseHelper.success(result);
     }
 
+    // POST /logStudy
+    if (action === 'logStudy') {
+      const result = StudyLogService.logStudy(postData.data);
+      return ResponseHelper.success(result);
+    }
+
+    // POST /getStats
+    if (action === 'getStats') {
+      const result = StudyLogService.getStats();
+      return ResponseHelper.success(result);
+    }
+
     return ResponseHelper.error('Invalid action', 400);
   } catch (error) {
     return ResponseHelper.error(error.toString(), 500);

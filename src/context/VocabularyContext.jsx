@@ -17,16 +17,18 @@ export const VocabularyProvider = ({ children }) => {
     setError(null);
     try {
       const data = await api.getVocabulary();
-      setVocabulary(data);
-      localStorage.setItem('vocab_cache', JSON.stringify(data));
-      return data;
+      // Filter out study_logs from the vocabulary data
+      const filteredData = data.filter(item => (item.folder || '').trim() !== 'study_logs');
+      setVocabulary(filteredData);
+      localStorage.setItem('vocab_cache', JSON.stringify(filteredData));
+      return filteredData;
     } catch (err) {
       setError(err.message);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [vocabulary.length]);
+  }, []);
 
   const addWord = async (wordData) => {
     setError(null);
@@ -138,9 +140,13 @@ export const VocabularyProvider = ({ children }) => {
     }
   };
 
+  const logStudyEvent = async (studyData) => {
+    return await api.logStudy(studyData);
+  };
+
   const folders = Array.from(new Set(
     vocabulary.map(item => item.folder?.trim() || 'Uncategorized')
-  )).sort();
+  )).filter(f => f !== 'study_logs').sort();
 
   return (
     <VocabularyContext.Provider value={{
@@ -153,7 +159,8 @@ export const VocabularyProvider = ({ children }) => {
       importWords,
       updateWord,
       deleteWord,
-      deleteFolder
+      deleteFolder,
+      logStudyEvent
     }}>
       {children}
     </VocabularyContext.Provider>

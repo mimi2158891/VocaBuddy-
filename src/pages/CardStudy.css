@@ -10,6 +10,66 @@
   --bg-secondary: var(--bg-color);
 }
 
+/* Fixed Height Layout for Study Page */
+.page-container.fixed-study-page {
+  height: calc(100vh - 64px); /* Subtract header height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px 24px;
+  gap: 12px;
+  max-width: 1350px; /* Wider top layout as requested */
+  margin: 0 auto;
+}
+
+.fixed-study-page .page-header {
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap; /* Strictly single row */
+  gap: 16px;
+}
+
+.fixed-study-page .page-header h2 {
+  font-size: 1.7rem !important; /* Made larger as requested */
+  margin: 0 !important;
+  font-weight: 700;
+}
+
+.fixed-study-page .page-header p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.fixed-study-page .study-toolbar {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  padding: 8px 16px;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%; /* Span the full container width */
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start; /* Items start from left */
+}
+
+.fixed-study-page .study-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0; 
+  padding: 0;
+  gap: 12px;
+}
+
 /* Toolbar Styles (Matching MyVocabulary) */
 .study-toolbar {
   display: flex;
@@ -40,6 +100,22 @@
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  min-width: 120px; /* Fixed minimum width to prevent truncation */
+  flex-shrink: 0;
+}
+
+/* Specific widths for different dropdown types */
+.inline-setting:has(.inline-select) {
+  min-width: 150px;
+}
+
+.inline-setting:has(select[value*="Folders"]) {
+  min-width: 180px; 
+}
+
+/* Reduced width for language selector */
+.language-setting {
+  min-width: 110px !important;
 }
 
 .setting-icon {
@@ -56,6 +132,7 @@
   font-weight: 500;
   outline: none;
   cursor: pointer;
+  max-width: 100%; /* Ensure select doesn't overflow container */
 }
 
 .playback-controls-group {
@@ -66,28 +143,38 @@
 
 .order-toggle {
   display: flex;
-  padding: 4px;
-  gap: 4px;
   background-color: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  position: relative;
+  z-index: 10;
+  gap: 4px;
 }
 
 .order-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  background-color: transparent;
-  transition: all 0.2s;
+  background: transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .order-btn.active {
-  background-color: var(--primary-color);
+  background-color: #4f46e5;
   color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.order-btn:not(.active):hover {
+  background-color: rgba(0,0,0,0.02);
 }
 
 .settings-divider {
@@ -101,15 +188,13 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 20px 10px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 2vh;
-  /* Occupy available height minus header */
-  height: calc(100vh - 160px);
-  min-height: 500px;
+  justify-content: center;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
 .study-header {
@@ -127,6 +212,9 @@
   border-radius: 12px;
   padding: 4px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color); /* More visible border */
+  position: relative;
+  z-index: 10;
 }
 
 .pill-btn {
@@ -187,9 +275,11 @@
   perspective: 1000px;
   width: 100%;
   max-width: 550px;
-  height: 45vh; /* Responsive height */
-  min-height: 360px;
+  height: 100%;
+  max-height: 380px; /* Constrain for single screen height */
   cursor: pointer;
+  flex: 1;
+  min-height: 250px;
 }
 
 .flashcard {
@@ -237,12 +327,22 @@
   color: var(--text-secondary);
 }
 
+.auto-scale-container {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+  padding: 0 10px;
+}
+
 .card-word {
-  font-size: clamp(3rem, 10vh, 5rem);
+  /* Use a consistent base size for scaling to build upon */
+  font-size: 5rem;
   font-weight: 800;
   color: var(--primary-color);
   margin: 0;
-  word-break: break-word;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.2;
 }
 
 .card-chinese {
@@ -258,6 +358,7 @@
   font-style: italic;
   line-height: 1.4;
   margin-top: 5px;
+  margin-bottom: 32px; /* Added margin to avoid overlap with SRS buttons */
   max-width: 90%;
 }
 

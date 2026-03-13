@@ -7,11 +7,11 @@ export const ACCENTS = {
 };
 
 export const ACCENT_LABELS = {
-  [ACCENTS.US]: '🇺🇸 美式 (American)',
-  [ACCENTS.UK]: '🇬🇧 英式 (British)',
-  [ACCENTS.AU]: '🇦🇺 澳式 (Australian)',
-  [ACCENTS.CA]: '🇨🇦 加拿大 (Canadian)',
-  [ACCENTS.IN]: '🇮🇳 印度 (Indian)'
+  [ACCENTS.US]: '🇺🇸 美式 (US)',
+  [ACCENTS.UK]: '🇬🇧 英式 (UK)',
+  [ACCENTS.AU]: '🇦🇺 澳式 (AU)',
+  [ACCENTS.CA]: '🇨🇦 加拿大 (CA)',
+  [ACCENTS.IN]: '🇮🇳 印度 (IN)'
 };
 
 export const PLAYBACK_MODES = {

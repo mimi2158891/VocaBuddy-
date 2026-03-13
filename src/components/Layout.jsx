@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ThemeToggle from './ThemeToggle';
 import { MdMenu } from 'react-icons/md';
@@ -7,6 +7,9 @@ import './Layout.css';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  const isHomePage = location.pathname === '/' || location.pathname === '/VocaBuddy-/';
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -22,12 +25,12 @@ const Layout = () => {
             <MdMenu size={28} />
           </button>
           <h1 className="mobile-title">VocaBuddy</h1>
-          <ThemeToggle />
+          {isHomePage && <ThemeToggle />}
         </header>
 
         <div className="desktop-header">
           <div className="spacer"></div>
-          <ThemeToggle />
+          {isHomePage && <ThemeToggle />}
         </div>
 
         <div className="content-area">

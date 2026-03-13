@@ -6,11 +6,60 @@ import { MdSkipPrevious, MdSkipNext, MdVolumeUp, MdShuffle, MdAutorenew, MdFlip,
 import './CardStudy.css';
 
 /**
+ * AutoScalingWord Component
+ * Scales text to fit container width without wrapping or clipping.
+ */
+const AutoScalingWord = ({ word }) => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  const handleResize = useCallback(() => {
+    if (containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const textWidth = textRef.current.offsetWidth;
+      if (textWidth > containerWidth) {
+        setScale(containerWidth / textWidth);
+      } else {
+        setScale(1);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [word, handleResize]);
+
+  return (
+    <div ref={containerRef} className="auto-scale-container" style={{ 
+      width: '100%', 
+      overflow: 'visible', 
+      display: 'flex', 
+      justifyContent: 'center' 
+    }}>
+      <h1 ref={textRef} className="card-word" style={{ 
+        transform: `scale(${scale})`,
+        transformOrigin: 'center center',
+        whiteSpace: 'nowrap',
+        display: 'inline-block',
+        margin: 0,
+        transition: 'transform 0.1s ease-out'
+      }}>
+        {word}
+      </h1>
+    </div>
+  );
+};
+
+/**
  * CardStudy Component
  * Refactored to use VocabularyContext for shared state.
  */
 const CardStudy = () => {
-  const { vocabulary, folders, loading, fetchVocabulary, updateWord } = useVocabulary();
+  const { vocabulary, folders, loading, fetchVocabulary, updateWord, logStudyEvent } = useVocabulary();
   const { accent, changeAccent, speakWord } = useSpeech();
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,56 +72,77 @@ const CardStudy = () => {
   
   const [sessionResults, setSessionResults] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [sessionStartTime] = useState(Date.now().toString()); // Simple Session ID
+  const [isWarmup, setIsWarmup] = useState(false);
+  
+  // Recall time tracking
+  const [cardStartTime, setCardStartTime] = useState(Date.now());
+  const [recallTime, setRecallTime] = useState(null);
   
   const vocabRef = useRef(vocabulary);
-  const prevVocabLength = useRef(0);
+  // Vocabulary update effect: Update playlist content without changing order or index
+  useEffect(() => {
+    setPlaylist(prevPlaylist => {
+      if (!prevPlaylist.length) return prevPlaylist;
+      return prevPlaylist.map(item => {
+        const updated = vocabulary.find(v => v.id === item.id);
+        return updated ? { ...updated } : item;
+      });
+    });
+  }, [vocabulary]);
 
+  const rebuildPlaylist = useCallback((resetIndex = true) => {
+    if (!vocabulary || vocabulary.length === 0) {
+      setPlaylist([]);
+      return;
+    }
+    
+    let list = vocabulary.filter(item => {
+      const itemFolder = item.folder?.trim() || 'Uncategorized';
+      return selectedFolder === 'All Folders' || itemFolder === selectedFolder;
+    });
+
+    if (isShuffle) {
+      list = [...list].sort(() => Math.random() - 0.5);
+    }
+    
+    setPlaylist(list);
+    if (resetIndex) {
+      setCurrentIndex(0);
+      setSessionResults([]);
+      setIsFinished(false);
+      setIsFlipped(false);
+    }
+  }, [vocabulary, selectedFolder, isShuffle, studyMode]);
+
+  // Initial fetch on mount
   useEffect(() => {
     fetchVocabulary();
   }, [fetchVocabulary]);
 
+  // Rebuild on mount or when filters/mode change
   useEffect(() => {
-    vocabRef.current = vocabulary;
-  }, [vocabulary]);
+    rebuildPlaylist(true);
+  }, [selectedFolder, isShuffle, studyMode]); 
 
-  const rebuildPlaylist = useCallback(() => {
-    const vocab = vocabRef.current;
-    if (!vocab || vocab.length === 0) {
-      setPlaylist([]);
-      return;
-    }
-    let list = vocab.filter(item => {
-      const itemFolder = item.folder?.trim() || 'Uncategorized';
-      const folderMatch = selectedFolder === 'All Folders' || itemFolder === selectedFolder;
-      
-      const now = new Date();
-      const nextReviewAt = item.nextReviewAt ? new Date(item.nextReviewAt) : null;
-      const isDue = !nextReviewAt || nextReviewAt <= now;
-      
-      return folderMatch && isDue;
-    });
-    if (isShuffle) {
-      list.sort(() => Math.random() - 0.5);
-    }
-    setPlaylist(list);
-    setCurrentIndex(0);
-    setSessionResults([]);
-    setIsFinished(false);
+  // Handle mode switching
+  const handleModeChange = (mode) => {
+    setStudyMode(mode);
     setIsFlipped(false);
-  }, [selectedFolder, isShuffle]);
-
-  useEffect(() => {
-    if (vocabulary.length > 0 && prevVocabLength.current === 0) {
-      rebuildPlaylist();
+    if (mode === 'test') {
+      setIsWarmup(true);
+    } else {
+      setIsWarmup(false);
     }
-    prevVocabLength.current = vocabulary.length;
-  }, [vocabulary.length, rebuildPlaylist]);
+  };
 
+  // Reset timer when index changes or warmup ends
   useEffect(() => {
-    if (prevVocabLength.current > 0) {
-      rebuildPlaylist();
+    if (!isWarmup) {
+      setCardStartTime(Date.now());
+      setRecallTime(null);
     }
-  }, [rebuildPlaylist]);
+  }, [currentIndex, isWarmup]);
 
   const handleNext = useCallback(() => {
     if (currentIndex < playlist.length - 1) {
@@ -91,7 +161,13 @@ const CardStudy = () => {
     }
   }, [currentIndex]);
 
-  const toggleFlip = () => setIsFlipped(!isFlipped);
+  const toggleFlip = () => {
+    if (!isFlipped && recallTime === null) {
+      const timeTaken = (Date.now() - cardStartTime) / 1000;
+      setRecallTime(timeTaken);
+    }
+    setIsFlipped(!isFlipped);
+  };
   
   const handleReview = (quality) => {
     const currentWord = playlist[currentIndex];
@@ -135,6 +211,15 @@ const CardStudy = () => {
       status
     };
 
+    // Log the study event
+    logStudyEvent({
+      session_id: sessionStartTime,
+      word_id: currentWord.id,
+      rating: quality,
+      recall_time: recallTime || (Date.now() - cardStartTime) / 1000,
+      timestamp: new Date().toISOString()
+    });
+
     updateWord(currentWord.id, updatedData);
     setSessionResults(prev => [...prev, { ...currentWord, quality }]);
     handleNext();
@@ -148,6 +233,8 @@ const CardStudy = () => {
     }
   };
 
+  const currentCard = playlist[currentIndex];
+  
   if (loading && vocabulary.length === 0) {
     return (
       <div className="page-container fadeIn">
@@ -215,7 +302,7 @@ const CardStudy = () => {
               )}
               {goodList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#10b981', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>記得 (Good) - {goodList.length}</h3>
+                  <h3 style={{color: '#10b981', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>普通 (Normal) - {goodList.length}</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {goodList.map((r, i) => (
                       <span key={i} style={{ 
@@ -275,20 +362,18 @@ const CardStudy = () => {
     );
   }
 
-  const currentCard = playlist[currentIndex];
-
   const renderHeader = () => (
-    <header className="page-header" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', justifyContent: 'space-between' }}>
+    <header className="page-header">
       <div>
         <h2>卡片學習模式</h2>
         <p>點擊卡片翻面，挑戰你的記憶力。</p>
       </div>
       
-      <div className="mode-pill-toggle" style={{ margin: 0 }}>
-        <button className={`pill-btn ${studyMode === 'browse' ? 'active' : ''}`} onClick={() => { setStudyMode('browse'); setIsFlipped(false); }}>
-           一般瀏覽
+      <div className="mode-pill-toggle">
+        <button className={`pill-btn ${studyMode === 'browse' ? 'active' : ''}`} onClick={() => handleModeChange('browse')}>
+           閱讀模式
         </button>
-        <button className={`pill-btn ${studyMode === 'test' ? 'active' : ''}`} onClick={() => { setStudyMode('test'); setIsFlipped(false); }}>
+        <button className={`pill-btn ${studyMode === 'test' ? 'active' : ''}`} onClick={() => handleModeChange('test')}>
            記憶測試
         </button>
       </div>
@@ -296,7 +381,7 @@ const CardStudy = () => {
   );
 
   return (
-    <div className="page-container fadeIn">
+    <div className="page-container fixed-study-page fadeIn">
       {renderHeader()}
 
       <div className="study-toolbar">
@@ -322,7 +407,7 @@ const CardStudy = () => {
           </select>
         </div>
 
-        <div className="inline-setting">
+        <div className="inline-setting language-setting">
           <select value={frontLanguage} onChange={(e) => setFrontLanguage(e.target.value)} className="inline-select">
             <option value="en">顯示英文</option>
             <option value="zh">顯示中文</option>
@@ -340,62 +425,114 @@ const CardStudy = () => {
       <div className="horizontal-divider"></div>
 
       <div className="study-container">
-        <div className="study-progress">{currentIndex + 1} / {playlist.length}</div>
-
-        <div className="flashcard-wrapper" onClick={toggleFlip}>
-          <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
-            <div className="card-front">
-              {frontLanguage === 'en' ? (
-                <>
-                  <span className="card-label">English</span>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-                    <h1 className="card-word">{currentCard?.word}</h1>
-                    <button className="audio-btn" onClick={handleSpeak}><MdVolumeUp size={24} /></button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="card-label">Meaning</span>
-                  <h2 className="card-chinese">{currentCard?.chinese}</h2>
-                </>
-              )}
+        {isWarmup ? (
+          <div className="warmup-card fadeIn shadow-premium" style={{
+            backgroundColor: 'var(--surface-color)',
+            padding: '40px 32px',
+            borderRadius: '24px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.06)',
+            textAlign: 'center',
+            maxWidth: '460px',
+            width: '90%',
+            margin: '60px auto',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}>
+            <div className="badge-test-mode" style={{
+              backgroundColor: 'rgba(79, 70, 229, 0.08)',
+              color: 'var(--primary-color)',
+              padding: '6px 14px',
+              borderRadius: '100px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              marginBottom: '20px'
+            }}>
+              Test Mode
             </div>
-
-            <div className="card-back">
-              {frontLanguage === 'en' ? (
-                <>
-                  <span className="card-label">Meaning</span>
-                  <h2 className="card-chinese">{currentCard?.chinese}</h2>
-                  {currentCard?.example && <p className="card-example">"{currentCard.example}"</p>}
-                </>
-              ) : (
-                <>
-                  <span className="card-label">English</span>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
-                    <h1 className="card-word">{currentCard?.word}</h1>
-                    <button className="audio-btn" onClick={handleSpeak}><MdVolumeUp size={24} /></button>
-                  </div>
-                  {currentCard?.example && <p className="card-example">"{currentCard.example}"</p>}
-                </>
-              )}
-              
-              {studyMode === 'test' && (
-                <div className="srs-controls" onClick={e => e.stopPropagation()}>
-                  <button className="srs-btn again" onClick={() => handleReview('Again')}>忘記</button>
-                  <button className="srs-btn hard" onClick={() => handleReview('Hard')}>困難</button>
-                  <button className="srs-btn good" onClick={() => handleReview('Good')}>記得</button>
-                  <button className="srs-btn easy" onClick={() => handleReview('Easy')}>簡單</button>
-                </div>
-              )}
-            </div>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '12px', color: 'var(--text-primary)' }}>
+              記憶測試即將開始
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '1rem', lineHeight: '1.6', maxWidth: '300px' }}>
+              準備好測試你的記憶力了嗎？<br/>即將顯示單字，請儘快回想。
+            </p>
+            <button className="primary-btn" onClick={() => setIsWarmup(false)} style={{ 
+              backgroundColor: 'var(--primary-color)',
+              color: 'white',
+              padding: '14px 40px', 
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              borderRadius: '14px',
+              width: '100%',
+              transition: 'transform 0.2s',
+              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+            }}>
+              開始測試
+            </button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="study-progress">{currentIndex + 1} / {playlist.length}</div>
 
-        <div className="study-controls">
-          <button className="control-btn" onClick={handlePrev} disabled={currentIndex === 0}><MdSkipPrevious size={30} /></button>
-          <button className="control-btn primary" onClick={toggleFlip}><MdFlip size={36} /></button>
-          <button className="control-btn" onClick={handleNext} disabled={currentIndex === playlist.length - 1}><MdSkipNext size={30} /></button>
-        </div>
+            <div className="flashcard-wrapper" onClick={toggleFlip}>
+              <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
+                <div className="card-front">
+                  {frontLanguage === 'en' ? (
+                    <>
+                      <span className="card-label">English</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', width: '100%' }}>
+                        <AutoScalingWord word={currentCard?.word} />
+                        <button className="audio-btn" onClick={handleSpeak} style={{ flexShrink: 0 }}><MdVolumeUp size={24} /></button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="card-label">Meaning</span>
+                      <h2 className="card-chinese">{currentCard?.chinese}</h2>
+                    </>
+                  )}
+                </div>
+
+                <div className="card-back">
+                  {frontLanguage === 'en' ? (
+                    <>
+                      <span className="card-label">Meaning</span>
+                      <h2 className="card-chinese">{currentCard?.chinese}</h2>
+                      {currentCard?.example && <p className="card-example">"{currentCard.example}"</p>}
+                    </>
+                  ) : (
+                    <>
+                      <span className="card-label">English</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px', width: '100%' }}>
+                        <AutoScalingWord word={currentCard?.word} />
+                        <button className="audio-btn" onClick={handleSpeak} style={{ flexShrink: 0 }}><MdVolumeUp size={24} /></button>
+                      </div>
+                      {currentCard?.example && <p className="card-example">"{currentCard.example}"</p>}
+                    </>
+                  )}
+                  
+                  {studyMode === 'test' && (
+                    <div className="srs-controls" onClick={e => e.stopPropagation()}>
+                      <button className="srs-btn again" onClick={() => handleReview('Again')}>忘記</button>
+                      <button className="srs-btn hard" onClick={() => handleReview('Hard')}>困難</button>
+                      <button className="srs-btn good" onClick={() => handleReview('Good')}>普通</button>
+                      <button className="srs-btn easy" onClick={() => handleReview('Easy')}>簡單</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="study-controls">
+              <button className="control-btn" onClick={handlePrev} disabled={currentIndex === 0}><MdSkipPrevious size={30} /></button>
+              <button className="control-btn primary" onClick={toggleFlip}><MdFlip size={36} /></button>
+              <button className="control-btn" onClick={handleNext} disabled={currentIndex === playlist.length - 1}><MdSkipNext size={30} /></button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

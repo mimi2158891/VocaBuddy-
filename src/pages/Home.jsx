@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MdAddCircleOutline, MdUploadFile, MdLibraryBooks } from 'react-icons/md';
 import './Home.css';
+import StudySummary from '../components/StudySummary';
 
 const Home = () => {
 
@@ -51,6 +52,8 @@ const Home = () => {
           </Link>
         ))}
       </section>
+
+      <StudySummary />
     </div>
   );
 };
