@@ -10,7 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icon.svg', 'logo.png'], // Removed non-existent favicon.ico
+      includeAssets: ['icon.svg', 'logo.png'],
       manifest: {
         name: 'Personal Vocabulary Trainer',
         short_name: 'VocabBuddy',
@@ -18,8 +18,8 @@ export default defineConfig({
         theme_color: '#4f46e5',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '.', 
-        scope: '.',
+        start_url: './', 
+        scope: './',
         icons: [
           {
             src: 'icon.svg',
@@ -40,7 +40,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Removed .ico to avoid build errors if missing
+        globPatterns: ['**/*.{js,css,html,png,svg}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/script\.google\.com\/.*/i,
