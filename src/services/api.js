@@ -13,9 +13,15 @@ const checkJsonResponse = async (response) => {
   return response.json();
 };
 
+/**
+ * Robustly get the API URL. 
+ * If missing, it returns a placeholder and logs an error instead of throwing immediately,
+ * which prevents build-time crashes if a plugin imports this module.
+ */
 const getBaseUrl = () => {
     if (!API_URL || API_URL === "undefined") {
-        throw new Error("VITE_GAS_API_URL is not defined! Please check your .env file or GitHub Secrets.");
+        console.error("WARNING: VITE_GAS_API_URL is not defined! Requests will fail at runtime.");
+        return ""; // Fallback to empty string to prevent crash, but fetch will fail later
     }
     return API_URL;
 };
@@ -27,6 +33,7 @@ export const api = {
   getVocabulary: async () => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing. Check VITE_GAS_API_URL.");
       const response = await fetch(`${baseUrl}?path=vocabulary`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await checkJsonResponse(response);
@@ -41,6 +48,7 @@ export const api = {
   createWord: async (data) => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing.");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -59,6 +67,7 @@ export const api = {
   importCSV: async (dataList) => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing.");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -77,6 +86,7 @@ export const api = {
   updateWord: async (id, data) => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing.");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -94,6 +104,7 @@ export const api = {
   deleteWord: async (id) => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing.");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -111,6 +122,7 @@ export const api = {
   deleteFolder: async (folderName) => {
     try {
       const baseUrl = getBaseUrl();
+      if (!baseUrl) throw new Error("API URL is missing.");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
