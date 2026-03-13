@@ -10,7 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'icon.svg', 'logo.png'],
+      includeAssets: ['icon.svg', 'logo.png'], // Removed non-existent favicon.ico
       manifest: {
         name: 'Personal Vocabulary Trainer',
         short_name: 'VocabBuddy',

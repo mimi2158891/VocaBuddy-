@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { MdHome, MdAddCircle, MdUploadFile, MdList, MdStyle, MdHeadphones, MdSettings } from 'react-icons/md';
-import logoImg from '../../public/logo.png';
+// Using a relative path that Vite will handle correctly for public assets
+const logoImg = `${import.meta.env.BASE_URL}logo.png`.replace(/\/+/g, '/');
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
