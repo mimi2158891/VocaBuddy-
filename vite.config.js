@@ -18,8 +18,8 @@ export default defineConfig({
         theme_color: '#4f46e5',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: './', 
-        scope: './',
+        start_url: '/VocaBuddy-/', 
+        scope: '/VocaBuddy-/',
         icons: [
           {
             src: 'icon.svg',
@@ -40,7 +40,6 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Removed .ico to avoid build errors if missing
         globPatterns: ['**/*.{js,css,html,png,svg}'],
         runtimeCaching: [
           {
