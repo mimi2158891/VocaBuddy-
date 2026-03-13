@@ -18,8 +18,8 @@ export default defineConfig({
         theme_color: '#4f46e5',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/VocaBuddy-/', 
-        scope: '/VocaBuddy-/',
+        start_url: '.', 
+        scope: '.',
         icons: [
           {
             src: 'icon.svg',
