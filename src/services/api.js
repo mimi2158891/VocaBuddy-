@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_GAS_API_URL;
+// API URL is now retrieved via getBaseUrl() to ensure latest env values are used
 
 /**
  * Utility to check if the response is JSON
@@ -15,15 +15,15 @@ const checkJsonResponse = async (response) => {
 
 /**
  * Robustly get the API URL. 
- * If missing, it returns a placeholder and logs an error instead of throwing immediately,
- * which prevents build-time crashes if a plugin imports this module.
+ * If missing, it returns an empty string which will cause a descriptive error in the fetch methods.
  */
 const getBaseUrl = () => {
-    if (!API_URL || API_URL === "undefined") {
-        console.error("WARNING: VITE_GAS_API_URL is not defined! Requests will fail at runtime.");
-        return ""; // Fallback to empty string to prevent crash, but fetch will fail later
+    const url = import.meta.env.VITE_GAS_API_URL;
+    if (!url || url === "undefined" || url.includes("your_google_apps_script_url")) {
+        console.error("CRITICAL: VITE_GAS_API_URL is missing or using placeholder! Please set it in .env or GitHub Secrets.");
+        return "";
     }
-    return API_URL;
+    return url;
 };
 
 /**
@@ -33,7 +33,7 @@ export const api = {
   getVocabulary: async () => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing. Check VITE_GAS_API_URL.");
+      if (!baseUrl) throw new Error("API URL 未設定。請檢查 VITE_GAS_API_URL 環境變數。");
       const response = await fetch(`${baseUrl}?path=vocabulary`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await checkJsonResponse(response);
@@ -48,7 +48,7 @@ export const api = {
   createWord: async (data) => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing.");
+      if (!baseUrl) throw new Error("API URL 未設定。");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -67,7 +67,7 @@ export const api = {
   importCSV: async (dataList) => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing.");
+      if (!baseUrl) throw new Error("API URL 未設定。");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -86,7 +86,7 @@ export const api = {
   updateWord: async (id, data) => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing.");
+      if (!baseUrl) throw new Error("API URL 未設定。");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -104,7 +104,7 @@ export const api = {
   deleteWord: async (id) => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing.");
+      if (!baseUrl) throw new Error("API URL 未設定。");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -122,7 +122,7 @@ export const api = {
   deleteFolder: async (folderName) => {
     try {
       const baseUrl = getBaseUrl();
-      if (!baseUrl) throw new Error("API URL is missing.");
+      if (!baseUrl) throw new Error("API URL 未設定。");
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },

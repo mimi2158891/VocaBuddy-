@@ -18,6 +18,21 @@ VocaBuddy is a modern, responsive, and offline-capable Progressive Web Applicati
 - **Backend**: Google Apps Script (REST API).
 - **Deployment**: GitHub Pages.
 
+## 🌍 Deployment (GitHub Pages)
+
+### 1. GitHub Secrets Setup (Required)
+To make the API work in production, you **MUST** add your Google Apps Script URL as a secret:
+1. Go to your GitHub Repo > **Settings** > **Secrets and variables** > **Actions**.
+2. Click **New repository secret**.
+3. Name: `VITE_GAS_API_URL`.
+4. Value: `https://script.google.com/macros/s/.../exec`.
+
+### 2. Google Apps Script Setup
+1. Open your GAS project.
+2. Click **Deploy** > **New deployment**.
+3. Select **Web App**.
+4. Set "Who has access" to **Anyone**.
+
 ## 📦 Local Development
 
 1. **Clone & Install:**
@@ -28,12 +43,12 @@ VocaBuddy is a modern, responsive, and offline-capable Progressive Web Applicati
    ```
 
 2. **Set up Environment Variables:**
-   Copy `.env.example` to `.env` and add your Google Apps Script URL:
-   ```bash
-   cp .env.example .env
+   Create a `.env` file in the root:
+   ```env
+   VITE_GAS_API_URL=你的_GAS_網址
    ```
 
-3. **Start Apps:**
+3. **Run Locally:**
    ```bash
    npm run dev
    ```

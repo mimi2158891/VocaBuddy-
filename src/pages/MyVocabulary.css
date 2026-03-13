@@ -401,7 +401,7 @@ textarea.edit-input.example {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .status-badge.new {

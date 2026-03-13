@@ -167,40 +167,81 @@ const CardStudy = () => {
     return (
       <div className="page-container fadeIn">
         <div className="study-container centered">
-          <div className="summary-card fadeIn">
-            <h2 style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--primary-color)' }}>🎉 複習完成！</h2>
-            <p style={{ textAlign: 'center', marginBottom: '25px', color: 'var(--text-secondary)' }}>本次共複習了 {sessionResults.length} 個單字</p>
+          <div className="summary-card-wrapper fadeIn" style={{ 
+            backgroundColor: '#ffffff', 
+            padding: '32px', 
+            borderRadius: '16px', 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
+            border: '1px solid var(--border-color)', 
+            maxWidth: '700px', 
+            width: '100%', 
+            margin: '20px auto' 
+          }}>
+            <h2 style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--primary-color)', fontSize: '1.8rem' }}>🎉 複習完成！</h2>
+            <p style={{ textAlign: 'center', marginBottom: '32px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>本次共複習了 {sessionResults.length} 個單字</p>
             
-            <div className="summary-lists" style={{ display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', maxHeight: '50vh', padding: '10px 0' }}>
+            <div className="summary-lists" style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', maxHeight: '60vh', padding: '10px 5px' }}>
               {againList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#ef4444', fontSize: '1rem', marginBottom: '10px'}}>忘記 (Again) - {againList.length}</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {againList.map((r, i) => <span key={i} className="status-badge again">{r.word}</span>)}
+                  <h3 style={{color: '#ef4444', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>忘記 (Again) - {againList.length}</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                    {againList.map((r, i) => (
+                      <span key={i} style={{ 
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                        color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid rgba(239, 68, 68, 0.15)',
+                        textTransform: 'none'
+                      }}>
+                        {r.word}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
               {hardList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#f59e0b', fontSize: '1rem', marginBottom: '10px'}}>困難 (Hard) - {hardList.length}</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {hardList.map((r, i) => <span key={i} className="status-badge hard">{r.word}</span>)}
+                  <h3 style={{color: '#f59e0b', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>困難 (Hard) - {hardList.length}</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                    {hardList.map((r, i) => (
+                      <span key={i} style={{ 
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                        color: '#f59e0b', backgroundColor: '#fef3c7', border: '1px solid rgba(245, 158, 11, 0.15)',
+                        textTransform: 'none'
+                      }}>
+                        {r.word}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
               {goodList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#10b981', fontSize: '1rem', marginBottom: '10px'}}>記得 (Good) - {goodList.length}</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {goodList.map((r, i) => <span key={i} className="status-badge review">{r.word}</span>)}
+                  <h3 style={{color: '#10b981', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>記得 (Good) - {goodList.length}</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                    {goodList.map((r, i) => (
+                      <span key={i} style={{ 
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                        color: '#10b981', backgroundColor: '#d1fae5', border: '1px solid rgba(16, 185, 129, 0.15)',
+                        textTransform: 'none'
+                      }}>
+                        {r.word}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
               {easyList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#3b82f6', fontSize: '1rem', marginBottom: '10px'}}>簡單 (Easy) - {easyList.length}</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {easyList.map((r, i) => <span key={i} className="status-badge easy">{r.word}</span>)}
+                  <h3 style={{color: '#3b82f6', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>簡單 (Easy) - {easyList.length}</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                    {easyList.map((r, i) => (
+                      <span key={i} style={{ 
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                        color: '#3b82f6', backgroundColor: '#dbeafe', border: '1px solid rgba(59, 130, 246, 0.15)',
+                        textTransform: 'none'
+                      }}>
+                        {r.word}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -258,15 +299,19 @@ const CardStudy = () => {
     <div className="page-container fadeIn">
       {renderHeader()}
 
-      <div className="vocab-controls-panel" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', padding: '4px', gap: '4px', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
-          <button onClick={() => setIsShuffle(false)} className={`pill-btn ${!isShuffle ? 'active' : ''}`} style={{ padding: '6px 12px' }}>
-            <MdAutorenew size={16} /> 順序
-          </button>
-          <button onClick={() => setIsShuffle(true)} className={`pill-btn ${isShuffle ? 'active' : ''}`} style={{ padding: '6px 12px' }}>
-            <MdShuffle size={16} /> 隨機
-          </button>
+      <div className="study-toolbar">
+        <div className="playback-controls-group">
+          <div className="order-toggle">
+            <button onClick={() => setIsShuffle(false)} className={`order-btn ${!isShuffle ? 'active' : ''}`}>
+              <MdAutorenew size={18} /> 順序
+            </button>
+            <button onClick={() => setIsShuffle(true)} className={`order-btn ${isShuffle ? 'active' : ''}`}>
+              <MdShuffle size={18} /> 隨機
+            </button>
+          </div>
         </div>
+
+        <div className="settings-divider"></div>
 
         <div className="inline-setting">
           <MdSettingsVoice size={20} className="setting-icon" />
@@ -291,6 +336,8 @@ const CardStudy = () => {
           </select>
         </div>
       </div>
+
+      <div className="horizontal-divider"></div>
 
       <div className="study-container">
         <div className="study-progress">{currentIndex + 1} / {playlist.length}</div>

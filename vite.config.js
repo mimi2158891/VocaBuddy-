@@ -12,14 +12,14 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icon.svg', 'logo.png'],
       manifest: {
-        name: 'Personal Vocabulary Trainer',
-        short_name: 'VocabBuddy',
-        description: 'Your personal vocabulary trainer for language learning.',
-        theme_color: '#4f46e5',
+        name: 'VocaBuddy+',
+        short_name: 'VocaBuddy',
+        description: 'Your personal vocabulary trainer with offline support.',
+        theme_color: '#6366f1',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '.', 
-        scope: '.',
+        start_url: '/VocaBuddy-/', 
+        scope: '/VocaBuddy-/',
         icons: [
           {
             src: 'icon.svg',
@@ -40,16 +40,17 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/script\.google\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'vocab-api-cache',
+              cacheName: 'api-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30 
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
