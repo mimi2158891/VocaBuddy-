@@ -1,25 +1,36 @@
 const API_URL = import.meta.env.VITE_GAS_API_URL;
 
-if (!API_URL) {
-  console.warn("Missing VITE_GAS_API_URL in .env file");
-}
+/**
+ * Utility to check if the response is JSON
+ */
+const checkJsonResponse = async (response) => {
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    console.error("Expected JSON but received non-JSON response:", text.substring(0, 200));
+    throw new Error("Server returned HTML instead of JSON. This usually means the API URL is wrong or the server returned a 404/login page.");
+  }
+  return response.json();
+};
 
+const getBaseUrl = () => {
+    if (!API_URL || API_URL === "undefined") {
+        throw new Error("VITE_GAS_API_URL is not defined! Please check your .env file or GitHub Secrets.");
+    }
+    return API_URL;
+};
+
+/**
+ * API Service for interacting with Google Apps Script backend.
+ */
 export const api = {
-  /**
-   * Fetch all vocabulary words
-   */
   getVocabulary: async () => {
     try {
-      const response = await fetch(`${API_URL}?path=vocabulary`, {
-        method: 'GET',
-        // Note: GAS requires no-cors for some environments, but to read JSON we need standard cors/cors-like behavior
-        // Using standard fetch, GAS handles redirects automatically.
-      });
-      
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}?path=vocabulary`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      if (result.status === 'success') return result.data;
       throw new Error(result.message || 'Failed to fetch vocabulary');
     } catch (error) {
       console.error("API Error (getVocabulary):", error);
@@ -27,27 +38,17 @@ export const api = {
     }
   },
 
-  /**
-   * Add a new word
-   */
   createWord: async (data) => {
     try {
-      const response = await fetch(API_URL, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        // Use text/plain for GAS to avoid CORS preflight issues across browsers in some cases
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'create',
-          data: data
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'create', data })
       });
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      if (result.status === 'success') return result.data;
       throw new Error(result.message || 'Failed to add word');
     } catch (error) {
       console.error("API Error (createWord):", error);
@@ -55,26 +56,17 @@ export const api = {
     }
   },
 
-  /**
-   * Import multiple words (CSV)
-   */
   importCSV: async (dataList) => {
     try {
-      const response = await fetch(API_URL, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'import',
-          data: dataList
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'import', data: dataList })
       });
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      if (result.status === 'success') return result.data;
       throw new Error(result.message || 'Failed to import CSV');
     } catch (error) {
       console.error("API Error (importCSV):", error);
@@ -82,83 +74,53 @@ export const api = {
     }
   },
 
-  /**
-   * Update an existing word
-   */
   updateWord: async (id, data) => {
     try {
-      const response = await fetch(API_URL, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          id: id,
-          data: data
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'update', id, data })
       });
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
-      throw new Error(result.message || 'Failed to update word');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      return result.status === 'success';
     } catch (error) {
       console.error("API Error (updateWord):", error);
       throw error;
     }
   },
 
-  /**
-   * Delete a word
-   */
   deleteWord: async (id) => {
     try {
-      const response = await fetch(API_URL, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          id: id
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', id })
       });
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
-      throw new Error(result.message || 'Failed to delete word');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      return result.status === 'success';
     } catch (error) {
       console.error("API Error (deleteWord):", error);
       throw error;
     }
   },
 
-  /**
-   * Bulk delete entirely by folder
-   */
   deleteFolder: async (folderName) => {
     try {
-      const response = await fetch(API_URL, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify({
-          action: 'deleteFolder',
-          folder: folderName
-        })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteFolder', folder: folderName })
       });
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        return result.data;
-      }
-      throw new Error(result.message || 'Failed to bulk delete folder');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await checkJsonResponse(response);
+      return result.status === 'success';
     } catch (error) {
+      if (error.message?.includes('找不到工作表')) return true; 
       console.error("API Error (deleteFolder):", error);
       throw error;
     }

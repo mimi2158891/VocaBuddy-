@@ -9,12 +9,13 @@ import Settings from './pages/Settings';
 import CardStudy from './pages/CardStudy';
 import { useTheme } from './hooks/useTheme';
 import OfflineIndicator from './components/OfflineIndicator';
+import { VocabularyProvider } from './context/VocabularyContext';
 
 function App() {
   useTheme(); // Initialize theme on app load
 
   return (
-    <>
+    <VocabularyProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -24,11 +25,10 @@ function App() {
 
           <Route path="study" element={<CardStudy />} />
           <Route path="settings" element={<Settings />} />
-          {/* Future routes will go here (Study, etc.) */}
         </Route>
       </Routes>
       <OfflineIndicator />
-    </>
+    </VocabularyProvider>
   );
 }
 

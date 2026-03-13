@@ -13,12 +13,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 );
 
+// PWA: Service Worker registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
-    });
+    // Ensuring the SW is registered relative to the window location to avoid 404s on subpaths
+    const swPath = `${import.meta.env.BASE_URL}sw.js`.replace(/\/+/g, '/');
+    navigator.serviceWorker.register(swPath)
+      .then(registration => {
+        console.log('SW registered: ', registration);
+      })
+      .catch(error => {
+        console.log('SW registration failed: ', error);
+      });
   });
 }

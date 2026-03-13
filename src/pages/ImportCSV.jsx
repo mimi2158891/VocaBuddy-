@@ -1,18 +1,21 @@
 import React, { useState, useRef } from 'react';
-import { MdCloudUpload, MdCheckCircle, MdError, MdWarning } from 'react-icons/md';
+import { MdCloudUpload, MdCheckCircle, MdError } from 'react-icons/md';
 import { parseCSV } from '../utils/csvParser';
-import { useImport } from '../hooks/useImport';
-import { useVocabulary } from '../hooks/useVocabulary';
+import { useVocabulary } from '../context/VocabularyContext';
 import './ImportCSV.css';
 
+/**
+ * ImportCSV Component
+ * Refactored to use VocabularyContext for importing and folder listings.
+ */
 const ImportCSV = () => {
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
-  const [importStatus, setImportStatus] = useState(null); // { type, message, details }
+  const [importStatus, setImportStatus] = useState(null); 
   const [targetFolder, setTargetFolder] = useState('Uncategorized');
   const fileInputRef = useRef(null);
-  const { importWords, loading } = useImport();
-  const { folders } = useVocabulary();
+  
+  const { importWords, folders, loading } = useVocabulary();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -27,7 +30,6 @@ const ImportCSV = () => {
     setImportStatus(null);
     setPreviewData([]);
     
-    // Auto-set the folder name based on the CSV file name
     const fileNameWithoutExtension = selectedFile.name.replace(/\.csv$/, '');
     setTargetFolder(fileNameWithoutExtension);
 
@@ -48,16 +50,13 @@ const ImportCSV = () => {
     reader.readAsText(selectedFile);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e) => e.preventDefault();
 
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
-      const fakeEvent = { target: { files: [droppedFile] } };
-      handleFileChange(fakeEvent);
+      handleFileChange({ target: { files: [droppedFile] } });
     }
   };
 
@@ -69,11 +68,10 @@ const ImportCSV = () => {
   };
 
   const handleImport = async () => {
-    if (previewData.length === 0) return;
+    if (previewData.length === 0 || loading) return;
     
     setImportStatus(null);
     
-    // Inject the selected folder into all parsed items before importing
     const dataWithFolder = previewData.map(item => ({
       ...item,
       folder: targetFolder
@@ -82,24 +80,15 @@ const ImportCSV = () => {
     const result = await importWords(dataWithFolder);
     
     if (result) {
-      const ignoredDetails = (result.ignoredWords || []).map(wordStr => {
-        const match = dataWithFolder.find(item => item.word.trim().toLowerCase() === wordStr.toLowerCase());
-        if (match) {
-          return `${match.word} ${match.chinese ? match.chinese : ''}`.trim();
-        }
-        return wordStr;
-      });
-
       setImportStatus({ 
         type: 'success', 
         message: `匯入完成！已將 ${result.imported} 個新單字加入 [${targetFolder}]。`,
-        details: result.duplicates > 0 ? `自動跳過 ${result.duplicates} 個已存在的單字：` : null,
-        ignoredList: ignoredDetails
+        details: result.duplicates > 0 ? `自動跳過 ${result.duplicates} 個已存在的單字。` : null
       });
       setFile(null);
       setPreviewData([]);
     } else {
-      setImportStatus({ type: 'error', message: '匯入失敗，請稍後再試。' });
+      setImportStatus({ type: 'error', message: '匯入失敗，請檢查網路或 API 設定。' });
     }
   };
 
@@ -117,13 +106,6 @@ const ImportCSV = () => {
             <div className="alert-content">
               <strong>{importStatus.message}</strong>
               {importStatus.details && <p className="alert-details">{importStatus.details}</p>}
-              {importStatus.ignoredList && importStatus.ignoredList.length > 0 && (
-                <ul className="ignored-list" style={{ marginTop: '8px', paddingLeft: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                  {importStatus.ignoredList.map((item, idx) => (
-                    <li key={idx} style={{ marginBottom: '4px' }}>{item}</li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
         )}
@@ -198,9 +180,6 @@ const ImportCSV = () => {
                 </tbody>
               </table>
             </div>
-            {previewData.length > 10 && (
-              <p className="preview-more-hint">...以及其他 {previewData.length - 10} 筆資料</p>
-            )}
           </div>
         )}
       </div>

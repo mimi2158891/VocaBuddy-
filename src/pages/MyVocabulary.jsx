@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useVocabulary } from '../hooks/useVocabulary';
+import { useVocabulary } from '../context/VocabularyContext';
 import { useSpeech } from '../hooks/useSpeech';
 import { ACCENTS, ACCENT_LABELS, PLAYBACK_MODES } from '../utils/constants';
 import { 
@@ -10,8 +10,22 @@ import {
 } from 'react-icons/md';
 import './MyVocabulary.css';
 
+/**
+ * MyVocabulary Component
+ * Refactored to use VocabularyContext for shared state across pages.
+ */
 const MyVocabulary = () => {
-  const { vocabulary, folders, loading, error, fetchVocabulary, updateWord, deleteWord, deleteFolder } = useVocabulary();
+  const { 
+    vocabulary, 
+    folders, 
+    loading, 
+    error, 
+    fetchVocabulary, 
+    updateWord, 
+    deleteWord, 
+    deleteFolder 
+  } = useVocabulary();
+  
   const { accent, speed, changeAccent, changeSpeed, speakWord } = useSpeech();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,10 +47,15 @@ const MyVocabulary = () => {
   const [successToast, setSuccessToast] = useState('');
 
   const speedOptions = [1.0, 1.25, 1.5, 2.0];
+  const isAutoPlayingRef = useRef(isAutoPlaying);
 
   useEffect(() => {
     fetchVocabulary();
   }, [fetchVocabulary]);
+
+  useEffect(() => {
+    isAutoPlayingRef.current = isAutoPlaying;
+  }, [isAutoPlaying]);
 
   const filteredVocab = vocabulary.filter(item => {
     const itemFolder = item.folder?.trim() || 'Uncategorized';
@@ -46,7 +65,7 @@ const MyVocabulary = () => {
     return folderMatch && searchMatch;
   });
 
-  // Identify duplicates in the current list
+  // Identify duplicates
   const wordCounts = vocabulary.reduce((acc, item) => {
     const word = item.word?.toLowerCase().trim();
     if (word) acc[word] = (acc[word] || 0) + 1;
@@ -66,10 +85,11 @@ const MyVocabulary = () => {
     setEditingId(null);
   };
 
-  const handleSaveEdit = (id) => {
-    // We don't await here so the UI closes immediately
-    updateWord(id, editForm);
-    setEditingId(null);
+  const handleSaveEdit = async (id) => {
+    const success = await updateWord(id, editForm);
+    if (success) {
+      setEditingId(null);
+    }
   };
 
   const handleDelete = (item) => {
@@ -81,20 +101,15 @@ const MyVocabulary = () => {
     const item = wordToDelete;
 
     if (playingId === item.id) {
-      import('../services/speechEngine').then(({ speechEngine }) => speechEngine.stop());
-      setPlayingId(null);
-      setIsAutoPlaying(false);
+      stopCurrentPlay();
     }
     
-    // Optimistically update UI
     setWordToDelete(null);
-    setSuccessToast('刪除成功！');
-    setTimeout(() => {
-      setSuccessToast('');
-    }, 1000);
-    
-    // Background delete request
-    await deleteWord(item.id);
+    const success = await deleteWord(item.id);
+    if (success) {
+      setSuccessToast('刪除成功！');
+      setTimeout(() => setSuccessToast(''), 1000);
+    }
   };
 
   const cancelDeleteWord = () => {
@@ -112,22 +127,17 @@ const MyVocabulary = () => {
     if (isAutoPlaying) {
       stopCurrentPlay();
       setIsAutoPlaying(false);
-      isAutoPlayingRef.current = false;
     }
     
-    // Optimistically update UI immediately
     const folderName = folderToDelete;
     setFolderToDelete(null);
     setSelectedFolder('All Folders');
     
-    // Show toast immediately
-    setSuccessToast('刪除成功！');
-    setTimeout(() => {
-      setSuccessToast('');
-    }, 1000);
-    
-    // Run backend delete in background
-    await deleteFolder(folderName);
+    const success = await deleteFolder(folderName);
+    if (success) {
+      setSuccessToast('刪除成功！');
+      setTimeout(() => setSuccessToast(''), 1000);
+    }
   };
 
   const cancelDeleteFolder = () => {
@@ -144,11 +154,10 @@ const MyVocabulary = () => {
     }
   }, [playingId]);
 
-  // Ref to track the current active playback session
-  const playSessionRef = React.useRef(0);
+  const playSessionRef = useRef(0);
 
   const stopCurrentPlay = () => {
-    playSessionRef.current += 1; // Incrementing invalidates all pending timeouts/callbacks
+    playSessionRef.current += 1;
     import('../services/speechEngine').then(({ speechEngine }) => {
       speechEngine.stop();
     });
@@ -159,34 +168,25 @@ const MyVocabulary = () => {
     if (isAutoPlaying) {
       stopCurrentPlay();
       setIsAutoPlaying(false);
-      isAutoPlayingRef.current = false;
     } else {
       if (filteredVocab.length === 0) return;
       setIsAutoPlaying(true);
-      isAutoPlayingRef.current = true;
-      // Start from first or random
       const startIndex = playOrder === 'random' ? Math.floor(Math.random() * filteredVocab.length) : 0;
       handlePlayCard(filteredVocab[startIndex], startIndex, true);
     }
   };
 
   const handlePlayCard = (item, currentIndexInList = -1, isAutoNext = false) => {
-    // If user manually clicks a card while auto-playing, stop auto-play but play that card
     if (!isAutoNext && isAutoPlaying) {
       setIsAutoPlaying(false);
-      isAutoPlayingRef.current = false;
     }
 
     if (playingId === item.id && !isAutoNext) {
-      // If manually clicking the currently playing card, stop it
       stopCurrentPlay();
       return;
     }
     
-    // Stop any previous speech and invalidate timeouts
     stopCurrentPlay();
-    
-    // Start a new session
     const currentSessionId = playSessionRef.current;
     setPlayingId(item.id);
     
@@ -226,16 +226,11 @@ const MyVocabulary = () => {
       let currentIndex = 0;
 
       const playNextCardIfAuto = () => {
-        if (playSessionRef.current !== currentSessionId) return; // session aborted
-        
-        // Remove `setPlayingId(null);` so the card stays highlighted during the 2.5s delay
-        
-        // Use the ref because the closure has the stale state from when handlePlayCard was initially called
+        if (playSessionRef.current !== currentSessionId) return;
         if (!isAutoPlayingRef.current) return;
         
         let nextIndex;
         if (playOrder === 'random') {
-          // Ensure we don't pick the exact same index twice in a row if there are multiple words
           if (filteredVocab.length > 1) {
             let candidate;
             do {
@@ -253,25 +248,18 @@ const MyVocabulary = () => {
           nextIndex = idx + 1;
           if (nextIndex >= filteredVocab.length) {
              setIsAutoPlaying(false);
-             isAutoPlayingRef.current = false;
              return;
           }
         }
         
-        // Wait 2.5 seconds after the current word finishes before moving to the next
         setTimeout(() => {
-          if (playSessionRef.current !== currentSessionId) return; // session aborted during pause
-          setPlayingId((currentPlayingId) => {
-             // We no longer check `if (currentPlayingId === null)` because we want it to stay lit
-             // during the 2.5s pause, but we still want to trigger the next card here.
-             handlePlayCard(filteredVocab[nextIndex], nextIndex, true);
-             return currentPlayingId;
-          });
+          if (playSessionRef.current !== currentSessionId) return;
+          handlePlayCard(filteredVocab[nextIndex], nextIndex, true);
         }, 2500);
       };
 
       const playNext = () => {
-        if (playSessionRef.current !== currentSessionId) return; // session aborted
+        if (playSessionRef.current !== currentSessionId) return;
 
         if (currentIndex >= sequence.length) {
           playNextCardIfAuto();
@@ -295,10 +283,9 @@ const MyVocabulary = () => {
         
         const fallbackTimer = setTimeout(() => {
           if (!endFired && playSessionRef.current === currentSessionId) {
-             console.warn("SpeechEngine fallback triggered for:", currentItem.text);
              handleEnd();
           }
-        }, estimatedDuration + 1000); // Add extra padding to the fallback
+        }, estimatedDuration + 1000);
 
         const onEndWrapper = () => {
           clearTimeout(fallbackTimer);
@@ -306,16 +293,16 @@ const MyVocabulary = () => {
         };
 
         import('../services/speechEngine').then(({ speechEngine }) => {
-           if (playSessionRef.current !== currentSessionId) {
-             clearTimeout(fallbackTimer);
-             return; // abort before speaking if session changed
-           }
-           speechEngine.speak(currentItem.text, { 
-             accent: currentItem.isChinese ? null : accent, 
-             rate: speed, 
-             isChinese: currentItem.isChinese, 
-             onEnd: onEndWrapper 
-           });
+            if (playSessionRef.current !== currentSessionId) {
+              clearTimeout(fallbackTimer);
+              return;
+            }
+            speechEngine.speak(currentItem.text, { 
+              accent: currentItem.isChinese ? null : accent, 
+              rate: speed, 
+              isChinese: currentItem.isChinese, 
+              onEnd: onEndWrapper 
+            });
         });
       };
 
@@ -324,14 +311,6 @@ const MyVocabulary = () => {
 
     playSequence();
   };
-  
-  // Ref to keep track of auto-playing state inside closures
-  const isAutoPlayingRef = React.useRef(isAutoPlaying);
-  useEffect(() => {
-    isAutoPlayingRef.current = isAutoPlaying;
-  }, [isAutoPlaying]);
-
-  // Handle Dynamic Button Positioning - Removed JS in favor of CSS Wrapper
 
   return (
     <div className="page-container fadeIn">
@@ -357,7 +336,7 @@ const MyVocabulary = () => {
               value={selectedFolder} 
               onChange={(e) => setSelectedFolder(e.target.value)}
               className="inline-select"
-              style={{flex: 1, minWidth: '120px', padding: '10px 16px', borderRadius: '12px', fontSize: '1rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'}}
+              style={{flex: 1, minWidth: '120px', padding: '10px 16px', borderRadius: '12px', fontSize: '1rem', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)'}}
             >
               <option value="All Folders">📁 所有資料夾</option>
               {folders.map(f => (
@@ -379,21 +358,9 @@ const MyVocabulary = () => {
                 onClick={handleDeleteFolder}
                 title={`Delete all words in ${selectedFolder}`}
                 style={{ 
-                  backgroundColor: '#fee2e2', 
-                  color: '#ef4444', 
-                  border: '1px solid currentColor', 
-                  padding: '8px 16px', 
-                  borderRadius: '8px', 
-                  fontSize: '0.95rem',
-                  cursor: 'pointer', 
-                  fontWeight: 600, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                  flex: '0 0 auto'
+                  backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid currentColor', 
+                  padding: '8px 16px', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', 
+                  fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px'
                 }}
               >
                 <MdDelete size={18} /> 刪除資料夾
@@ -403,7 +370,6 @@ const MyVocabulary = () => {
         </div>
         
         <div className="audio-settings-bar">
-          {/* Output Order & Auto Play */}
           <div className="playback-controls-group">
             <button 
               className={`auto-play-btn ${isAutoPlaying ? 'active' : ''}`}
@@ -421,14 +387,12 @@ const MyVocabulary = () => {
               <button 
                 className={`order-btn ${playOrder === 'sequential' ? 'active' : ''}`}
                 onClick={() => setPlayOrder('sequential')}
-                title="順序朗讀"
               >
                 <MdAutorenew size={18} /> 順序
               </button>
               <button 
                 className={`order-btn ${playOrder === 'random' ? 'active' : ''}`}
                 onClick={() => setPlayOrder('random')}
-                title="隨機朗讀"
               >
                 <MdShuffle size={18} /> 隨機
               </button>
@@ -439,12 +403,8 @@ const MyVocabulary = () => {
 
           <div className="inline-setting">
             <MdPlayCircleOutline size={20} className="setting-icon"/>
-            <select 
-              value={playbackMode} 
-              onChange={(e) => setPlaybackMode(e.target.value)}
-              className="inline-select"
-            >
-              <option value={PLAYBACK_MODES.EN_ONLY}>只讀英文 (預設)</option>
+            <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value)} className="inline-select">
+              <option value={PLAYBACK_MODES.EN_ONLY}>只讀英文</option>
               <option value={PLAYBACK_MODES.EN_ZH}>先英文後中文</option>
               <option value={PLAYBACK_MODES.ALL}>全部 (單字/中文/例句)</option>
               <option value={PLAYBACK_MODES.EX_ONLY}>只讀例句</option>
@@ -453,26 +413,16 @@ const MyVocabulary = () => {
 
           <div className="inline-setting">
             <MdSettingsVoice size={20} className="setting-icon"/>
-            <select 
-              value={accent} 
-              onChange={(e) => changeAccent(e.target.value)}
-              className="inline-select"
-            >
+            <select value={accent} onChange={(e) => changeAccent(e.target.value)} className="inline-select">
               {Object.values(ACCENTS).map(code => (
-                <option key={code} value={code}>
-                  {ACCENT_LABELS[code]}
-                </option>
+                <option key={code} value={code}>{ACCENT_LABELS[code]}</option>
               ))}
             </select>
           </div>
 
           <div className="inline-setting">
             <MdSpeed size={20} className="setting-icon"/>
-            <select 
-              value={speed} 
-              onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-              className="inline-select"
-            >
+            <select value={speed} onChange={(e) => changeSpeed(parseFloat(e.target.value))} className="inline-select">
               {speedOptions.map(val => (
                 <option key={val} value={val}>{val.toFixed(2)}x</option>
               ))}
@@ -486,39 +436,23 @@ const MyVocabulary = () => {
       {loading && vocabulary.length === 0 ? (
         <div className="loading-state">
           <div className="spinner primary-spinner"></div>
-          <p>正在從 Google Sheets 載入你的單字庫...</p>
+          <p>正在載入你的單字庫...</p>
         </div>
       ) : (
         <div className="vocab-grid-container">
           <div className="vocab-grid">
           {filteredVocab.length > 0 ? (
-            filteredVocab.map((item, index) => (
+            filteredVocab.map((item) => (
               <div 
                 key={item.id} 
                 id={`vocab-card-${item.id}`}
                 className={`vocab-card ${playingId === item.id ? 'playing' : ''} ${editingId === item.id ? 'editing' : ''}`}
               >
                 {editingId === item.id ? (
-                  // Edit Mode
                   <div className="edit-form" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      className="edit-input word"
-                      value={editForm.word}
-                      onChange={(e) => setEditForm({ ...editForm, word: e.target.value })}
-                      placeholder="Word"
-                    />
-                    <input 
-                      className="edit-input chinese"
-                      value={editForm.chinese}
-                      onChange={(e) => setEditForm({ ...editForm, chinese: e.target.value })}
-                      placeholder="Chinese Meaning"
-                    />
-                    <textarea 
-                      className="edit-input example"
-                      value={editForm.example}
-                      onChange={(e) => setEditForm({ ...editForm, example: e.target.value })}
-                      placeholder="Example sentence"
-                    />
+                    <input className="edit-input word" value={editForm.word} onChange={(e) => setEditForm({ ...editForm, word: e.target.value })} placeholder="Word" />
+                    <input className="edit-input chinese" value={editForm.chinese} onChange={(e) => setEditForm({ ...editForm, chinese: e.target.value })} placeholder="Chinese Meaning" />
+                    <textarea className="edit-input example" value={editForm.example} onChange={(e) => setEditForm({ ...editForm, example: e.target.value })} placeholder="Example sentence" />
                     <div className="edit-actions">
                       <button className="action-btn save" onClick={(e) => { e.stopPropagation(); handleSaveEdit(item.id); }}>
                         <MdCheck size={20} /> 儲存
@@ -529,49 +463,26 @@ const MyVocabulary = () => {
                     </div>
                   </div>
                 ) : (
-                  // View Mode
                   <>
                     <div className="vocab-card-header">
                       <h3 className="vocab-word">{item.word}</h3>
                       <div className="card-actions-top">
-                        <button 
-                          className={`play-btn-small ${playingId === item.id ? 'active' : ''}`} 
-                          title="播放發音"
-                          onClick={(e) => { e.stopPropagation(); handlePlayCard(item); }}
-                        >
+                        <button className={`play-btn-small ${playingId === item.id ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); handlePlayCard(item); }}>
                           <MdVolumeUp size={18} />
                         </button>
                       </div>
                     </div>
-                    <div className="vocab-chinese">
-                      {item.chinese || <span className="empty-field">暫無中文解釋</span>}
-                    </div>
-                    {item.example && (
-                      <div className="vocab-example">
-                        "{item.example}"
-                      </div>
-                    )}
+                    <div className="vocab-chinese">{item.chinese || <span className="empty-field">暫無中文解釋</span>}</div>
+                    {item.example && <div className="vocab-example">"{item.example}"</div>}
                     <div className="vocab-meta">
                       <div className="card-actions-bottom">
-                        <button className="card-action-icon edit" onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }} title="Edit">
-                          <MdEdit size={18} />
-                        </button>
-                        <button className="card-action-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(item); }} title="Delete">
-                          <MdDelete size={18} />
-                        </button>
+                        <button className="card-action-icon edit" onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}><MdEdit size={18} /></button>
+                        <button className="card-action-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}><MdDelete size={18} /></button>
                       </div>
                       <div className="card-badges">
-                        <span className="status-badge" style={{ backgroundColor: 'var(--surface-hover)', color: 'var(--text-secondary)' }}>
-                          📁 {item.folder || 'Uncategorized'}
-                        </span>
-                        {wordCounts[item.word?.toLowerCase().trim()] > 1 && (
-                          <span className="status-badge duplicate" title="This word appears multiple times in your list">
-                            Duplicate
-                          </span>
-                        )}
-                        <span className={`status-badge ${item.status || 'new'}`}>
-                          {item.status || 'new'}
-                        </span>
+                        <span className="status-badge">📁 {item.folder || 'Uncategorized'}</span>
+                        {wordCounts[item.word?.toLowerCase().trim()] > 1 && <span className="status-badge duplicate">Duplicate</span>}
+                        <span className={`status-badge ${item.status || 'new'}`}>{item.status || 'new'}</span>
                       </div>
                     </div>
                   </>
@@ -579,50 +490,22 @@ const MyVocabulary = () => {
               </div>
             ))
           ) : (
-            <div className="empty-state">
-              <p>找不到符合條件的單字。</p>
-            </div>
+            <div className="empty-state"><p>找不到符合條件的單字。</p></div>
           )}
           </div>
-          
-          {/* Sticky Stop Auto-Play Sidebar */}
-          {isAutoPlaying && (
-            <div className="sticky-stop-sidebar">
-              <button 
-                className="floating-stop-btn"
-                onClick={() => {
-                   stopCurrentPlay();
-                   setIsAutoPlaying(false);
-                   isAutoPlayingRef.current = false;
-                }}
-                title="停止自動播放"
-              >
-                <MdStopCircle size={24} />
-                <span>停止</span>
-              </button>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Delete Word Confirmation Modal via Portal */}
       {wordToDelete && createPortal(
         <div className="modal-overlay" onClick={cancelDeleteWord}>
           <div className="modal-content delete-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-icon warning">
-              <MdDelete size={32} />
-            </div>
+            <div className="modal-icon warning"><MdDelete size={32} /></div>
             <h3>確認刪除單字</h3>
-            <p>
-              即將刪除 <strong>{wordToDelete.word}</strong>。
-              <br/>刪除後將無法復原，是否確認刪除？
-            </p>
+            <p>即將刪除 <strong>{wordToDelete.word}</strong>。<br/>刪除後將無法復原，是否確認刪除？</p>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={cancelDeleteWord}>
-                取消
-              </button>
+              <button className="btn-secondary" onClick={cancelDeleteWord}>取消</button>
               <button className="btn-danger" onClick={confirmDeleteWord} disabled={loading}>
-                {loading ? <span className="spinner-small" style={{borderColor: 'white', borderTopColor: 'transparent'}}/> : '確認刪除'}
+                {loading ? <span className="spinner-small" /> : '確認刪除'}
               </button>
             </div>
           </div>
@@ -630,24 +513,16 @@ const MyVocabulary = () => {
         document.body
       )}
 
-      {/* Delete Folder Confirmation Modal via Portal */}
       {folderToDelete && createPortal(
         <div className="modal-overlay" onClick={cancelDeleteFolder}>
           <div className="modal-content delete-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-icon warning">
-              <MdDelete size={32} />
-            </div>
+            <div className="modal-icon warning"><MdDelete size={32} /></div>
             <h3>確認刪除資料夾</h3>
-            <p>
-              即將刪除 <strong>{folderToDelete}</strong>。
-              <br/>刪除後將無法復原，是否確認刪除？
-            </p>
+            <p>即將刪除 <strong>{folderToDelete}</strong>。<br/>刪除後將無法復原，是否確認刪除？</p>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={cancelDeleteFolder}>
-                取消
-              </button>
+              <button className="btn-secondary" onClick={cancelDeleteFolder}>取消</button>
               <button className="btn-danger" onClick={confirmDeleteFolder} disabled={loading}>
-                {loading ? <span className="spinner-small" style={{borderColor: 'white', borderTopColor: 'transparent'}}/> : '確認刪除'}
+                {loading ? <span className="spinner-small" /> : '確認刪除'}
               </button>
             </div>
           </div>
@@ -655,14 +530,13 @@ const MyVocabulary = () => {
         document.body
       )}
 
-      {/* Success Modal via Portal */}
       {successToast && createPortal(
         <div className="modal-overlay">
-          <div className="modal-content delete-modal" style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-icon success" style={{ backgroundColor: '#d1fae5', color: '#10b981', margin: '0 auto 15px auto', width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
+          <div className="modal-content delete-modal" style={{ textAlign: 'center' }}>
+            <div className="modal-icon success" style={{ backgroundColor: '#d1fae5', color: '#10b981', margin: '0 auto 15px auto', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <MdCheck size={40} />
             </div>
-            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.25rem' }}>{successToast}</h3>
+            <h3>{successToast}</h3>
           </div>
         </div>,
         document.body

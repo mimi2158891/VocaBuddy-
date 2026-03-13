@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { useVocabulary } from '../hooks/useVocabulary';
-import { MdAdd, MdCheckCircle } from 'react-icons/md';
+import { useVocabulary } from '../context/VocabularyContext';
+import { MdAdd, MdCheckCircle, MdError } from 'react-icons/md';
 import './AddWord.css';
 
+/**
+ * AddWord Component
+ * Refactored to use VocabularyContext and await API response for non-optimistic UI.
+ */
 const AddWord = () => {
-  const ObjectFolders = useVocabulary();
-  const { addWord, loading, error, folders } = ObjectFolders;
+  const { addWord, loading, error, folders } = useVocabulary();
   const [successMsg, setSuccessMsg] = useState('');
   const [isNewFolder, setIsNewFolder] = useState(false);
   
@@ -31,25 +34,35 @@ const AddWord = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.word.trim()) return;
+    if (!formData.word.trim() || loading) return;
 
     setSuccessMsg('');
     const currentWord = formData.word;
     
-    // Fire and forget (it's optimistic in the hook)
+    // Prepare final data
     const finalData = { ...formData };
     if (!finalData.folder.trim()) {
       finalData.folder = 'Uncategorized';
     }
     
-    addWord(finalData);
+    // Task 4: Await the addWord call for non-optimistic update
+    const success = await addWord(finalData);
     
-    setSuccessMsg(`"${currentWord}" has been added! (Syncing in background)`);
-    setFormData(prev => ({ ...prev, word: '', chinese: '', example: '', folder: isNewFolder ? 'Uncategorized' : prev.folder }));
-    if (isNewFolder) setIsNewFolder(false);
-    setTimeout(() => setSuccessMsg(''), 5000);
+    if (success) {
+      setSuccessMsg(`"${currentWord}" has been added successfully!`);
+      // Reset form on success
+      setFormData(prev => ({ 
+        ...prev, 
+        word: '', 
+        chinese: '', 
+        example: '', 
+        folder: isNewFolder ? 'Uncategorized' : prev.folder 
+      }));
+      if (isNewFolder) setIsNewFolder(false);
+      setTimeout(() => setSuccessMsg(''), 5000);
+    }
   };
 
   return (
@@ -60,7 +73,12 @@ const AddWord = () => {
       </header>
 
       <div className="form-card">
-        {error && <div className="alert error">{error}</div>}
+        {error && (
+          <div className="alert error">
+            <MdError size={20} />
+            <span>{error}</span>
+          </div>
+        )}
         {successMsg && (
           <div className="alert success">
             <MdCheckCircle size={20} />
@@ -80,6 +98,7 @@ const AddWord = () => {
               placeholder="例如：ubiquitous"
               required
               autoFocus
+              disabled={loading}
             />
           </div>
 
@@ -96,11 +115,13 @@ const AddWord = () => {
                   placeholder="輸入新資料夾名稱..."
                   autoFocus
                   style={{ flex: 1 }}
+                  disabled={loading}
                 />
                 <button 
                   type="button" 
                   onClick={() => { setIsNewFolder(false); setFormData(prev => ({ ...prev, folder: 'Uncategorized' })); }}
                   style={{ padding: '0 15px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-color)', cursor: 'pointer' }}
+                  disabled={loading}
                 >
                   取消
                 </button>
@@ -112,6 +133,7 @@ const AddWord = () => {
                 value={folders.includes(formData.folder) || formData.folder === 'Uncategorized' ? formData.folder : '+new'}
                 onChange={handleChange}
                 style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)', fontSize: '1rem' }}
+                disabled={loading}
               >
                 <option value="Uncategorized">📁 未分類 (預設)</option>
                 {folders.filter(f => f !== 'Uncategorized').map(f => (
@@ -132,6 +154,7 @@ const AddWord = () => {
               value={formData.chinese}
               onChange={handleChange}
               placeholder="例如：無所不在的"
+              disabled={loading}
             />
           </div>
 
@@ -144,6 +167,7 @@ const AddWord = () => {
               onChange={handleChange}
               placeholder="His ubiquitous influence was felt by all the family."
               rows={3}
+              disabled={loading}
             />
           </div>
 
