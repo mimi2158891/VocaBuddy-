@@ -228,7 +228,7 @@
 }
 
 .accent-setting {
-  min-width: 155px;
+  min-width: 130px;
 }
 
 .speed-setting {
@@ -262,11 +262,26 @@
 }
 
 .vocab-card.playing {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-  transform: translateY(-2px);
+  border-color: var(--primary-purple);
+  box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.4), 0 0 0 2px rgba(99, 102, 241, 0.2);
+  transform: translateY(-8px);
   cursor: pointer;
+  animation: cardFloat 3s ease-in-out infinite;
+  z-index: 10;
 }
+
+@keyframes cardFloat {
+  0% {
+    transform: translateY(-8px);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
+}
+
 
 .vocab-card:hover {
   transform: translateY(-4px);

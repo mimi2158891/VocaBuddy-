@@ -48,6 +48,11 @@ const MyVocabulary = () => {
 
   const speedOptions = [1.0, 1.25, 1.5, 2.0];
   const isAutoPlayingRef = useRef(isAutoPlaying);
+  const playOrderRef = useRef(playOrder);
+  const playbackModeRef = useRef(playbackMode);
+  const accentRef = useRef(accent);
+  const speedRef = useRef(speed);
+
 
   useEffect(() => {
     fetchVocabulary();
@@ -56,6 +61,23 @@ const MyVocabulary = () => {
   useEffect(() => {
     isAutoPlayingRef.current = isAutoPlaying;
   }, [isAutoPlaying]);
+
+  useEffect(() => {
+    playOrderRef.current = playOrder;
+  }, [playOrder]);
+
+  useEffect(() => {
+    playbackModeRef.current = playbackMode;
+  }, [playbackMode]);
+
+  useEffect(() => {
+    accentRef.current = accent;
+  }, [accent]);
+
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
 
   const filteredVocab = vocabulary.filter(item => {
     const itemFolder = item.folder?.trim() || 'Uncategorized';
@@ -170,19 +192,21 @@ const MyVocabulary = () => {
       setIsAutoPlaying(false);
     } else {
       // If switching order while playing, just update the order
+      setPlayOrder(newOrder);
+      playOrderRef.current = newOrder; // Update ref immediately for the loop
+      
       if (isAutoPlaying) {
-        setPlayOrder(newOrder);
         return;
       }
       
       // Starting fresh
       if (filteredVocab.length === 0) return;
-      setPlayOrder(newOrder);
       setIsAutoPlaying(true);
       const startIndex = newOrder === 'random' ? Math.floor(Math.random() * filteredVocab.length) : 0;
       handlePlayCard(filteredVocab[startIndex], startIndex, true);
     }
   };
+
 
   const handlePlayCard = (item, currentIndexInList = -1, isAutoNext = false) => {
     if (!isAutoNext && isAutoPlaying) {
@@ -201,7 +225,7 @@ const MyVocabulary = () => {
     const playSequence = () => {
       let sequence = [];
       
-      switch (playbackMode) {
+      switch (playbackModeRef.current) {
         case PLAYBACK_MODES.EN_ONLY:
           sequence = [{ text: item.word, isChinese: false }];
           break;
@@ -225,6 +249,7 @@ const MyVocabulary = () => {
           sequence = [{ text: item.word, isChinese: false }];
       }
 
+
       sequence = sequence.filter(s => s.text && s.text.trim() !== '');
       if (sequence.length === 0) {
         setPlayingId(null);
@@ -238,7 +263,7 @@ const MyVocabulary = () => {
         if (!isAutoPlayingRef.current) return;
         
         let nextIndex;
-        if (playOrder === 'random') {
+        if (playOrderRef.current === 'random') {
           if (filteredVocab.length > 1) {
             let candidate;
             do {
@@ -249,6 +274,7 @@ const MyVocabulary = () => {
              nextIndex = 0;
           }
         } else {
+
           let idx = currentIndexInList;
           if (idx === -1) {
             idx = filteredVocab.findIndex(v => v.id === item.id);
@@ -306,11 +332,12 @@ const MyVocabulary = () => {
               return;
             }
             speechEngine.speak(currentItem.text, { 
-              accent: currentItem.isChinese ? null : accent, 
-              rate: speed, 
+              accent: currentItem.isChinese ? null : accentRef.current, 
+              rate: speedRef.current, 
               isChinese: currentItem.isChinese, 
               onEnd: onEndWrapper 
             });
+
         });
       };
 

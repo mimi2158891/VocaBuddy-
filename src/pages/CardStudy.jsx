@@ -34,13 +34,13 @@ const AutoScalingWord = ({ word }) => {
   }, [word, handleResize]);
 
   return (
-    <div ref={containerRef} className="auto-scale-container" style={{ 
-      width: '100%', 
-      overflow: 'visible', 
-      display: 'flex', 
-      justifyContent: 'center' 
+    <div ref={containerRef} className="auto-scale-container" style={{
+      width: '100%',
+      overflow: 'visible',
+      display: 'flex',
+      justifyContent: 'center'
     }}>
-      <h1 ref={textRef} className="card-word" style={{ 
+      <h1 ref={textRef} className="card-word" style={{
         transform: `scale(${scale})`,
         transformOrigin: 'center center',
         whiteSpace: 'nowrap',
@@ -61,7 +61,7 @@ const AutoScalingWord = ({ word }) => {
 const CardStudy = () => {
   const { vocabulary, folders, loading, fetchVocabulary, updateWord, logStudyEvent } = useVocabulary();
   const { accent, changeAccent, speakWord } = useSpeech();
-  
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -69,16 +69,16 @@ const CardStudy = () => {
   const [selectedFolder, setSelectedFolder] = useState('All Folders');
   const [frontLanguage, setFrontLanguage] = useState('en');
   const [studyMode, setStudyMode] = useState('browse');
-  
+
   const [sessionResults, setSessionResults] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
   const [sessionStartTime] = useState(Date.now().toString()); // Simple Session ID
   const [isWarmup, setIsWarmup] = useState(false);
-  
+
   // Recall time tracking
   const [cardStartTime, setCardStartTime] = useState(Date.now());
   const [recallTime, setRecallTime] = useState(null);
-  
+
   const vocabRef = useRef(vocabulary);
   // Vocabulary update effect: Update playlist content without changing order or index
   useEffect(() => {
@@ -96,7 +96,7 @@ const CardStudy = () => {
       setPlaylist([]);
       return;
     }
-    
+
     let list = vocabulary.filter(item => {
       const itemFolder = item.folder?.trim() || 'Uncategorized';
       return selectedFolder === 'All Folders' || itemFolder === selectedFolder;
@@ -105,7 +105,7 @@ const CardStudy = () => {
     if (isShuffle) {
       list = [...list].sort(() => Math.random() - 0.5);
     }
-    
+
     setPlaylist(list);
     if (resetIndex) {
       setCurrentIndex(0);
@@ -123,7 +123,7 @@ const CardStudy = () => {
   // Rebuild on mount or when filters/mode change
   useEffect(() => {
     rebuildPlaylist(true);
-  }, [selectedFolder, isShuffle, studyMode]); 
+  }, [selectedFolder, isShuffle, studyMode]);
 
   // Handle mode switching
   const handleModeChange = (mode) => {
@@ -168,7 +168,7 @@ const CardStudy = () => {
     }
     setIsFlipped(!isFlipped);
   };
-  
+
   const handleReview = (quality) => {
     const currentWord = playlist[currentIndex];
     if (!currentWord) return;
@@ -182,7 +182,7 @@ const CardStudy = () => {
     if (quality === 'Again') {
       repetitions = 0;
       interval = 1;
-      easeFactor = Math.max(1.3, easeFactor - 0.2); 
+      easeFactor = Math.max(1.3, easeFactor - 0.2);
       nextReviewAt.setDate(nextReviewAt.getDate() + interval);
       status = "learning";
     } else if (quality === 'Hard') {
@@ -224,7 +224,7 @@ const CardStudy = () => {
     setSessionResults(prev => [...prev, { ...currentWord, quality }]);
     handleNext();
   };
-  
+
   const handleSpeak = (e) => {
     e.stopPropagation();
     const currentWord = playlist[currentIndex];
@@ -234,7 +234,7 @@ const CardStudy = () => {
   };
 
   const currentCard = playlist[currentIndex];
-  
+
   if (loading && vocabulary.length === 0) {
     return (
       <div className="page-container fadeIn">
@@ -254,27 +254,27 @@ const CardStudy = () => {
     return (
       <div className="page-container fadeIn">
         <div className="study-container centered">
-          <div className="summary-card-wrapper fadeIn" style={{ 
-            backgroundColor: '#ffffff', 
-            padding: '32px', 
-            borderRadius: '16px', 
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
-            border: '1px solid var(--border-color)', 
-            maxWidth: '700px', 
-            width: '100%', 
-            margin: '20px auto' 
+          <div className="summary-card-wrapper fadeIn" style={{
+            backgroundColor: '#ffffff',
+            padding: '32px',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: '1px solid var(--border-color)',
+            maxWidth: '700px',
+            width: '100%',
+            margin: '20px auto'
           }}>
             <h2 style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--primary-color)', fontSize: '1.8rem' }}>🎉 複習完成！</h2>
             <p style={{ textAlign: 'center', marginBottom: '32px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>本次共複習了 {sessionResults.length} 個單字</p>
-            
+
             <div className="summary-lists" style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', maxHeight: '60vh', padding: '10px 5px' }}>
               {againList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#ef4444', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>忘記 (Again) - {againList.length}</h3>
+                  <h3 style={{ color: '#ef4444', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>忘記 (Again) - {againList.length}</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {againList.map((r, i) => (
-                      <span key={i} style={{ 
-                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                      <span key={i} style={{
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500',
                         color: '#ef4444', backgroundColor: '#fee2e2', border: '1px solid rgba(239, 68, 68, 0.15)',
                         textTransform: 'none'
                       }}>
@@ -286,11 +286,11 @@ const CardStudy = () => {
               )}
               {hardList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#f59e0b', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>困難 (Hard) - {hardList.length}</h3>
+                  <h3 style={{ color: '#f59e0b', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>困難 (Hard) - {hardList.length}</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {hardList.map((r, i) => (
-                      <span key={i} style={{ 
-                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                      <span key={i} style={{
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500',
                         color: '#f59e0b', backgroundColor: '#fef3c7', border: '1px solid rgba(245, 158, 11, 0.15)',
                         textTransform: 'none'
                       }}>
@@ -302,11 +302,11 @@ const CardStudy = () => {
               )}
               {goodList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#10b981', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>普通 (Normal) - {goodList.length}</h3>
+                  <h3 style={{ color: '#10b981', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>普通 (Normal) - {goodList.length}</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {goodList.map((r, i) => (
-                      <span key={i} style={{ 
-                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                      <span key={i} style={{
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500',
                         color: '#10b981', backgroundColor: '#d1fae5', border: '1px solid rgba(16, 185, 129, 0.15)',
                         textTransform: 'none'
                       }}>
@@ -318,11 +318,11 @@ const CardStudy = () => {
               )}
               {easyList.length > 0 && (
                 <div className="summary-section">
-                  <h3 style={{color: '#3b82f6', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>簡單 (Easy) - {easyList.length}</h3>
+                  <h3 style={{ color: '#3b82f6', fontSize: '1.1rem', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>簡單 (Easy) - {easyList.length}</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {easyList.map((r, i) => (
-                      <span key={i} style={{ 
-                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500', 
+                      <span key={i} style={{
+                        display: 'inline-block', padding: '8px 16px', borderRadius: '8px', fontSize: '1.05rem', fontWeight: '500',
                         color: '#3b82f6', backgroundColor: '#dbeafe', border: '1px solid rgba(59, 130, 246, 0.15)',
                         textTransform: 'none'
                       }}>
@@ -333,7 +333,7 @@ const CardStudy = () => {
                 </div>
               )}
             </div>
-            
+
             <div style={{ textAlign: 'center', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
               <button className="primary-btn" onClick={() => rebuildPlaylist()} style={{ width: '100%', maxWidth: '300px' }}>
                 完成 / 開始新一輪
@@ -349,8 +349,8 @@ const CardStudy = () => {
     return (
       <div className="page-container fadeIn">
         <header className="page-header">
-           <h2>卡片學習模式</h2>
-           <p>全部複習完畢！</p>
+          <h2>卡片學習模式</h2>
+          <p>全部複習完畢！</p>
         </header>
         <div className="study-container centered">
           <div style={{ textAlign: 'center', backgroundColor: 'var(--surface-color)', padding: '40px', borderRadius: '16px', boxShadow: 'var(--shadow-md)' }}>
@@ -368,13 +368,13 @@ const CardStudy = () => {
         <h2>卡片學習模式</h2>
         <p>點擊卡片翻面，挑戰你的記憶力。</p>
       </div>
-      
+
       <div className="mode-pill-toggle">
         <button className={`pill-btn ${studyMode === 'browse' ? 'active' : ''}`} onClick={() => handleModeChange('browse')}>
-           閱讀模式
+          閱讀模式
         </button>
         <button className={`pill-btn ${studyMode === 'test' ? 'active' : ''}`} onClick={() => handleModeChange('test')}>
-           記憶測試
+          記憶測試
         </button>
       </div>
     </header>
@@ -457,12 +457,12 @@ const CardStudy = () => {
               記憶測試即將開始
             </h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '1rem', lineHeight: '1.6', maxWidth: '300px' }}>
-              準備好測試你的記憶力了嗎？<br/>即將顯示單字，請儘快回想。
+              準備好測試你的記憶力了嗎？<br />即將顯示單字，請儘快回想。
             </p>
-            <button className="primary-btn" onClick={() => setIsWarmup(false)} style={{ 
+            <button className="primary-btn" onClick={() => setIsWarmup(false)} style={{
               backgroundColor: 'var(--primary-color)',
               color: 'white',
-              padding: '14px 40px', 
+              padding: '14px 40px',
               fontSize: '1.1rem',
               fontWeight: '600',
               borderRadius: '14px',
@@ -513,7 +513,7 @@ const CardStudy = () => {
                       {currentCard?.example && <p className="card-example">"{currentCard.example}"</p>}
                     </>
                   )}
-                  
+
                   {studyMode === 'test' && (
                     <div className="srs-controls" onClick={e => e.stopPropagation()}>
                       <button className="srs-btn again" onClick={() => handleReview('Again')}>忘記</button>
