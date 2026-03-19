@@ -12,14 +12,28 @@
 
 /* Fixed Height Layout for Study Page */
 .page-container.fixed-study-page {
-  height: calc(100vh - 64px); /* Subtract header height */
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; /* Back to hidden to prevent any scroll-jump during animation */
   padding: 12px 24px;
   gap: 12px;
-  max-width: 1350px; /* Wider top layout as requested */
+  max-width: 1350px;
   margin: 0 auto;
+  background-color: var(--bg-color); /* Solid background to prevent see-through */
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .page-container.fixed-study-page {
+    height: auto;
+    min-height: calc(100dvh - 64px);
+    overflow-y: auto;
+    overflow-x: hidden; /* Strictly prevent horizontal jitter */
+    padding-bottom: 30px;
+    background-color: var(--bg-color);
+  }
 }
 
 .fixed-study-page .page-header {
@@ -29,7 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: nowrap; /* Strictly single row */
+  flex-wrap: wrap; /* Changed from nowrap to allow wrapping on small screens */
   gap: 16px;
 }
 
@@ -48,15 +62,15 @@
   flex-shrink: 0;
   margin-bottom: 0;
   padding: 8px 16px;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  max-width: 100%; /* Span the full container width */
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
   align-items: center;
-  justify-content: flex-start; /* Items start from left */
+  justify-content: flex-start;
 }
 
 .fixed-study-page .study-container {
@@ -67,7 +81,14 @@
   align-items: center;
   min-height: 0; 
   padding: 0;
-  gap: 12px;
+  gap: 8px; /* Reduced from 12px */
+}
+
+@media (max-height: 800px) {
+  .fixed-study-page .study-container {
+    justify-content: flex-start;
+    padding-top: 10px;
+  }
 }
 
 /* Toolbar Styles (Matching MyVocabulary) */
@@ -83,6 +104,13 @@
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .study-toolbar {
+    padding: 8px 12px;
+    gap: 8px;
+  }
 }
 
 .horizontal-divider {
@@ -116,6 +144,13 @@
 /* Reduced width for language selector */
 .language-setting {
   min-width: 110px !important;
+}
+
+@media (max-width: 768px) {
+  .inline-setting {
+    min-width: 0 !important;
+    flex: 1 1 auto;
+  }
 }
 
 .setting-icon {
@@ -165,6 +200,14 @@
   background: transparent;
   transition: all 0.2s ease;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .order-btn {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
 }
 
 .order-btn.active {
@@ -230,6 +273,14 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap; /* Prevent text wrapping inside button */
+}
+
+@media (max-width: 480px) {
+  .pill-btn {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
 }
 
 .pill-btn.active {
@@ -270,16 +321,56 @@
   box-shadow: var(--shadow-sm);
 }
 
+.srs-stats-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stat-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: white;
+}
+
+.stat-badge.again { background-color: #ef4444; }
+.stat-badge.hard { background-color: #f59e0b; }
+.stat-badge.good { background-color: #10b981; }
+.stat-badge.easy { background-color: #3b82f6; }
+
 /* Card Styles */
 .flashcard-wrapper {
-  perspective: 1000px;
+  perspective: 2000px; /* Even higher perspective for flatter rotation */
   width: 100%;
   max-width: 550px;
-  height: 100%;
-  max-height: 380px; /* Constrain for single screen height */
+  height: 380px; 
   cursor: pointer;
-  flex: 1;
-  min-height: 250px;
+  flex: none;
+  min-height: 220px;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-height: 750px) {
+  .flashcard-wrapper {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .flashcard-wrapper {
+    height: 280px; /* Fixed height on mobile */
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flashcard-wrapper {
+    max-height: 280px;
+    min-height: 220px;
+  }
 }
 
 .flashcard {
@@ -289,8 +380,12 @@
   text-align: center;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-  border-radius: 24px;
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.04), 
+    0 4px 6px -2px rgba(0, 0, 0, 0.02),
+    0 20px 40px -10px rgba(0, 0, 0, 0.07);
+  border-radius: 30px; /* Slightly more rounded */
+  will-change: transform;
 }
 
 .flashcard.flipped {
@@ -308,14 +403,24 @@
   justify-content: center;
   align-items: center;
   padding: 20px;
-  border-radius: 24px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  background: linear-gradient(145deg, #ffffff, #f8faff); /* Subtle gradient for depth */
+  border: 1px solid rgba(0, 0, 0, 0.03); /* Extremely subtle border */
+}
+
+@media (max-width: 480px) {
+  .card-front, .card-back {
+    padding: 12px;
+  }
+  
+  .card-label {
+    top: 12px !important;
+  }
 }
 
 .card-back {
   transform: rotateY(180deg);
-  background: var(--bg-secondary);
+  background: linear-gradient(145deg, #ffffff, #f5f8ff); /* Slightly different gradient for back */
 }
 
 .card-label {
@@ -346,7 +451,7 @@
 }
 
 .card-chinese {
-  font-size: clamp(2rem, 7vh, 3.5rem);
+  font-size: clamp(1.8rem, 6vh, 2.5rem);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 10px;
@@ -369,6 +474,13 @@
   align-items: center;
   gap: 24px;
   margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .study-controls {
+    margin-top: 4px;
+    gap: 16px;
+  }
 }
 
 .control-btn {
@@ -463,7 +575,7 @@
     height: 250px;
   }
   .card-word { font-size: 2rem; }
-  .card-chinese { font-size: 1.5rem; }
+  .card-chinese { font-size: 1.2rem; }
 }
 
 /* SRS Controls */
@@ -478,6 +590,16 @@
   width: 100%;
   justify-content: center;
   box-sizing: border-box;
+  z-index: 100; /* Ensure on top of back card content */
+  pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  .srs-controls {
+    bottom: 12px;
+    padding: 0 12px;
+    gap: 6px;
+  }
 }
 
 .srs-btn {
@@ -486,14 +608,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 5px;
-  border-radius: 12px;
+  padding: 10px 5px;
+  border-radius: 100px; /* Modern pill shape */
   border: none;
   cursor: pointer;
   color: white;
-  transition: transform 0.2s, opacity 0.2s;
-  max-width: 80px;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 85px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .srs-btn:hover {

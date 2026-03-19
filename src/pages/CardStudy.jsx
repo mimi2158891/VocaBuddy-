@@ -75,6 +75,11 @@ const CardStudy = () => {
   const [sessionStartTime] = useState(Date.now().toString()); // Simple Session ID
   const [isWarmup, setIsWarmup] = useState(false);
 
+  // SRS specific state
+  const [totalCount, setTotalCount] = useState(0);
+  const [srsStats, setSrsStats] = useState({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
+  const lastReviewedIdRef = useRef(null);
+
   // Recall time tracking
   const [cardStartTime, setCardStartTime] = useState(Date.now());
   const [recallTime, setRecallTime] = useState(null);
@@ -112,6 +117,8 @@ const CardStudy = () => {
       setSessionResults([]);
       setIsFinished(false);
       setIsFlipped(false);
+      setTotalCount(list.length);
+      setSrsStats({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
     }
   }, [vocabulary, selectedFolder, isShuffle, studyMode]);
 
@@ -168,7 +175,6 @@ const CardStudy = () => {
     }
     setIsFlipped(!isFlipped);
   };
-
   const handleReview = (quality) => {
     const currentWord = playlist[currentIndex];
     if (!currentWord) return;
@@ -220,18 +226,76 @@ const CardStudy = () => {
       timestamp: new Date().toISOString()
     });
 
+    // Update local stats
+    setSrsStats(prev => ({ ...prev, [quality]: prev[quality] + 1 }));
+    lastReviewedIdRef.current = currentWord.id;
+
     updateWord(currentWord.id, updatedData);
     setSessionResults(prev => [...prev, { ...currentWord, quality }]);
-    handleNext();
+
+    // SRI Logic: Queue manipulation
+    const remainingQueue = [...playlist];
+    // Remove the current card
+    remainingQueue.splice(currentIndex, 1);
+
+    if (quality === 'Easy') {
+      // Just remove from session, already removed by splice above
+    } else {
+      let insertIndex = 0;
+      if (quality === 'Again') {
+        // Position 2 (immediately after next card)
+        insertIndex = 1;
+      } else if (quality === 'Hard') {
+        // Middle of remaining
+        insertIndex = Math.floor(remainingQueue.length / 2);
+      } else if (quality === 'Good') {
+        // End of remaining
+        insertIndex = remainingQueue.length;
+      }
+      // Ensure index is within bounds
+      insertIndex = Math.max(0, Math.min(insertIndex, remainingQueue.length));
+      remainingQueue.splice(insertIndex, 0, currentWord);
+    }
+
+    if (remainingQueue.length === 0) {
+      setIsFlipped(false);
+      setTimeout(() => setIsFinished(true), 150);
+    } else {
+      setIsFlipped(false);
+      setTimeout(() => {
+        setPlaylist(remainingQueue);
+        setCurrentIndex(0);
+      }, 150);
+    }
   };
 
   const handleSpeak = (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     const currentWord = playlist[currentIndex];
     if (currentWord && currentWord.word) {
       speakWord(currentWord.word);
     }
   };
+
+  // Auto-play English word in Test Mode
+  useEffect(() => {
+    if (studyMode === 'test' && !isWarmup && !isFinished && playlist.length > 0) {
+      const currentWord = playlist[currentIndex];
+      if (!currentWord || currentWord.id === lastReviewedIdRef.current) return;
+
+      const shouldSpeak = 
+        (frontLanguage === 'en' && !isFlipped) || 
+        (frontLanguage === 'zh' && isFlipped);
+
+      if (shouldSpeak) {
+        // Small delay to ensure transitions finish if any
+        const timer = setTimeout(() => {
+          speakWord(currentWord.word);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentIndex, isFlipped, isWarmup, studyMode, isFinished, frontLanguage, playlist, speakWord]);
 
   const currentCard = playlist[currentIndex];
 
@@ -264,7 +328,7 @@ const CardStudy = () => {
             width: '100%',
             margin: '20px auto'
           }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--primary-color)', fontSize: '1.8rem' }}>🎉 複習完成！</h2>
+            <h2 style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--primary-color)', fontSize: '1.8rem' }}>🎉 練習完成！</h2>
             <p style={{ textAlign: 'center', marginBottom: '32px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>本次共複習了 {sessionResults.length} 個單字</p>
 
             <div className="summary-lists" style={{ display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', maxHeight: '60vh', padding: '10px 5px' }}>
@@ -334,9 +398,18 @@ const CardStudy = () => {
               )}
             </div>
 
-            <div style={{ textAlign: 'center', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
-              <button className="primary-btn" onClick={() => rebuildPlaylist()} style={{ width: '100%', maxWidth: '300px' }}>
-                完成 / 開始新一輪
+            <div style={{ textAlign: 'center', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <button className="primary-btn" onClick={() => {
+                setStudyMode('browse');
+                rebuildPlaylist(true);
+              }} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
+                回到閱讀模式
+              </button>
+              <button className="primary-btn" onClick={() => {
+                rebuildPlaylist(true);
+                setIsWarmup(true);
+              }} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold' }}>
+                重新測驗
               </button>
             </div>
           </div>
@@ -475,7 +548,20 @@ const CardStudy = () => {
           </div>
         ) : (
           <>
-            <div className="study-progress">{currentIndex + 1} / {playlist.length}</div>
+            <div className="study-progress-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <div className="study-progress">
+                {studyMode === 'test' ? `${playlist.length} / ${totalCount}` : `${currentIndex + 1} / ${playlist.length}`}
+              </div>
+              
+              {studyMode === 'test' && (
+                <div className="srs-stats-badges" style={{ display: 'flex', gap: '8px' }}>
+                  <span className="stat-badge again">Again: {srsStats.Again}</span>
+                  <span className="stat-badge hard">Hard: {srsStats.Hard}</span>
+                  <span className="stat-badge good">Good: {srsStats.Good}</span>
+                  <span className="stat-badge easy">Easy: {srsStats.Easy}</span>
+                </div>
+              )}
+            </div>
 
             <div className="flashcard-wrapper" onClick={toggleFlip}>
               <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
@@ -526,11 +612,14 @@ const CardStudy = () => {
               </div>
             </div>
 
-            <div className="study-controls">
-              <button className="control-btn" onClick={handlePrev} disabled={currentIndex === 0}><MdSkipPrevious size={30} /></button>
-              <button className="control-btn primary" onClick={toggleFlip}><MdFlip size={36} /></button>
-              <button className="control-btn" onClick={handleNext} disabled={currentIndex === playlist.length - 1}><MdSkipNext size={30} /></button>
-            </div>
+            {studyMode !== 'test' && (
+              <div className="study-controls">
+                <button className="control-btn" onClick={handlePrev} disabled={currentIndex === 0}><MdSkipPrevious size={30} /></button>
+                <button className="control-btn primary" onClick={toggleFlip}><MdFlip size={36} /></button>
+                <button className="control-btn" onClick={handleNext} disabled={currentIndex === playlist.length - 1}><MdSkipNext size={30} /></button>
+              </div>
+            )}
+             {/* Flip button removed from test mode as per user request (can click card) */}
           </>
         )}
       </div>

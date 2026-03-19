@@ -13,6 +13,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Better font rendering for mobile */
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
 }
 
 a {
@@ -29,4 +37,21 @@ button {
   font-family: inherit;
   border: none;
   background: none;
+  /* Min touch target size */
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Base page container padding */
+.page-container {
+  padding: 0;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
 }

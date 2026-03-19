@@ -30,6 +30,12 @@
   border: 1px solid var(--border-color);
 }
 
+@media (max-width: 640px) {
+  .form-card {
+    padding: 20px;
+  }
+}
+
 .add-word-form {
   display: flex;
   flex-direction: column;

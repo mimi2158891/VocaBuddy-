@@ -9,16 +9,30 @@
 .vocab-controls-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 12px; /* Reduced from 16px */
+  margin-bottom: 24px; /* Reduced from 32px */
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Row 1: Filter Row */
 .filter-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px; /* Reduced from 12px */
   flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .search-bar {
+    flex: 1 1 auto;
+  }
 }
 
 .search-bar {
@@ -26,6 +40,12 @@
   position: relative;
   display: flex;
   align-items: center;
+}
+
+@media (max-width: 480px) {
+  .search-bar {
+    flex: 1 1 100%;
+  }
 }
 
 .search-icon {
@@ -54,8 +74,8 @@
 .filter-controls-group {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
+  gap: 10px; /* Reduced from 12px */
+  flex-wrap: wrap;
 }
 
 .folder-select {
@@ -71,6 +91,13 @@
   min-width: 160px;
   outline: none;
   transition: all 0.2s;
+}
+
+@media (max-width: 480px) {
+  .folder-select {
+    min-width: 120px;
+    flex: 1;
+  }
 }
 
 .word-count-badge {
@@ -113,6 +140,13 @@
   border-radius: 16px;
   border: 1px solid var(--border-color);
   box-shadow: var(--purple-shadow);
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .function-panel-card {
+    padding: 12px;
+  }
 }
 
 .play-controls-row {
@@ -121,7 +155,9 @@
   gap: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding-bottom: 8px; /* More padding for scrollbar visibility */
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -161,10 +197,8 @@
 }
 
 .play-order-btn.active {
-  background-color: #ef4444;
-  /* Force stop red for active player */
+  background-color: #ef4444; /* Force stop red for active player */
   color: white;
-  animation: pulse 2s infinite;
 }
 
 .play-order-btn:disabled {
@@ -227,12 +261,25 @@
   flex: 1;
 }
 
-.accent-setting {
-  min-width: 130px;
-}
-
 .speed-setting {
   min-width: 85px;
+}
+
+@media (max-width: 768px) {
+  .play-controls-row {
+    flex-wrap: wrap; /* Wrap on mobile */
+    gap: 10px;
+  }
+  
+  .inline-setting-v2 {
+    flex: 1 1 auto;
+    min-width: 100px;
+  }
+
+  .play-order-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 
 .vocab-grid-container {
@@ -245,8 +292,15 @@
 .vocab-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .vocab-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .vocab-card {
