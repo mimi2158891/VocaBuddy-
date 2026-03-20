@@ -18,13 +18,13 @@ const checkJsonResponse = async (response) => {
  * If missing, it returns an empty string which will cause a descriptive error in the fetch methods.
  */
 const getBaseUrl = () => {
-    const url = import.meta.env.VITE_GAS_API_URL;
-    console.log("Current API URL from env:", url);
-    if (!url || url === "undefined" || url.includes("your_google_apps_script_url")) {
-        console.error("CRITICAL: VITE_GAS_API_URL is missing or using placeholder! Please set it in .env or GitHub Secrets.");
-        return "";
-    }
-    return url;
+  const url = import.meta.env.VITE_GAS_API_URL;
+  console.log("Current API URL from env:", url);
+  if (!url || url === "undefined" || url.includes("your_google_apps_script_url")) {
+    console.error("CRITICAL: VITE_GAS_API_URL is missing or using placeholder! Please set it in .env or GitHub Secrets.");
+    return "";
+  }
+  return url;
 };
 
 /**
@@ -133,7 +133,7 @@ export const api = {
       const result = await checkJsonResponse(response);
       return result.status === 'success';
     } catch (error) {
-      if (error.message?.includes('找不到工作表')) return true; 
+      if (error.message?.includes('找不到工作表')) return true;
       console.error("API Error (deleteFolder):", error);
       throw error;
     }

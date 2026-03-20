@@ -193,7 +193,11 @@ const VocabularyService = {
 
     // Need global existing words to check duplicates across all sheets
     const existing = SheetHelper.getAllSheetsData();
-    const existingWords = new Set(existing.map(item => item.word.toString().toLowerCase().trim()));
+    const existingWords = new Set(
+      existing
+        .filter(item => item && item.word)
+        .map(item => String(item.word).toLowerCase().trim())
+    );
     
     const now = new Date().toISOString();
     let importedCount = 0;
@@ -204,9 +208,9 @@ const VocabularyService = {
     const recordsByFolder = {};
 
     list.forEach(data => {
-      if (!data.word) return;
+      if (!data || !data.word) return;
       
-      const wordClean = data.word.toString().trim();
+      const wordClean = String(data.word).trim();
       if (!wordClean) return;
 
       if (existingWords.has(wordClean.toLowerCase())) {

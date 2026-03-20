@@ -11,10 +11,10 @@ import './ImportCSV.css';
 const ImportCSV = () => {
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
-  const [importStatus, setImportStatus] = useState(null); 
+  const [importStatus, setImportStatus] = useState(null);
   const [targetFolder, setTargetFolder] = useState('Uncategorized');
   const fileInputRef = useRef(null);
-  
+
   const { importWords, folders, loading } = useVocabulary();
 
   const handleFileChange = (e) => {
@@ -29,7 +29,7 @@ const ImportCSV = () => {
     setFile(selectedFile);
     setImportStatus(null);
     setPreviewData([]);
-    
+
     const fileNameWithoutExtension = selectedFile.name.replace(/\.csv$/, '');
     setTargetFolder(fileNameWithoutExtension);
 
@@ -69,19 +69,19 @@ const ImportCSV = () => {
 
   const handleImport = async () => {
     if (previewData.length === 0 || loading) return;
-    
+
     setImportStatus(null);
-    
+
     const dataWithFolder = previewData.map(item => ({
       ...item,
       folder: targetFolder
     }));
-    
+
     const result = await importWords(dataWithFolder);
-    
+
     if (result) {
-      setImportStatus({ 
-        type: 'success', 
+      setImportStatus({
+        type: 'success',
         message: `匯入完成！已將 ${result.imported} 個新單字加入 [${targetFolder}]。`,
         details: result.duplicates > 0 ? `自動跳過 ${result.duplicates} 個已存在的單字。` : null
       });
@@ -111,7 +111,7 @@ const ImportCSV = () => {
         )}
 
         {!previewData.length && !loading && (
-          <div 
+          <div
             className="drop-zone"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
@@ -120,12 +120,12 @@ const ImportCSV = () => {
             <MdCloudUpload size={48} className="upload-icon" />
             <h3>點擊或拖曳 CSV 檔案至此</h3>
             <p className="upload-hint">格式：英文單字, 中文解釋, 例句 (以逗號分隔)</p>
-            <input 
-              type="file" 
-              accept=".csv" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
+            <input
+              type="file"
+              accept=".csv"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
             />
           </div>
         )}
@@ -134,10 +134,10 @@ const ImportCSV = () => {
           <div className="preview-section">
             <div className="preview-header">
               <h3>資料預覽 (共 {previewData.length} 個單字)</h3>
-              
+
               <div className="preview-actions">
                 <div className="folder-selection">
-                  <label htmlFor="importFolder" style={{marginRight: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)'}}>匯入至：</label>
+                  <label htmlFor="importFolder" style={{ marginRight: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>匯入至：</label>
                   <input
                     id="importFolder"
                     type="text"
@@ -145,7 +145,7 @@ const ImportCSV = () => {
                     value={targetFolder}
                     onChange={(e) => setTargetFolder(e.target.value)}
                     placeholder="例如：多益單字"
-                    style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-color)', width: '160px'}}
+                    style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-color)', width: '160px' }}
                   />
                   <datalist id="folder-options">
                     {folders.map(f => <option key={f} value={f} />)}
